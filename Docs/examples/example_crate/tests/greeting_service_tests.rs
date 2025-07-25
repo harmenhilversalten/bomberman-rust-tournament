@@ -1,5 +1,5 @@
-use example_crate::implementations::EnglishGreeter;
 use example_crate::helpers::EmojiFormatter;
+use example_crate::implementations::EnglishGreeter;
 use example_crate::services::GreetingService;
 use proptest::prelude::*;
 
@@ -11,10 +11,7 @@ fn greeting_service_returns_expected_greeting() {
 
 #[test]
 fn greeting_service_formats_output_with_emoji() {
-    let service = GreetingService::with_formatter(
-        EnglishGreeter,
-        Box::new(EmojiFormatter),
-    );
+    let service = GreetingService::with_formatter(EnglishGreeter, Box::new(EmojiFormatter));
     assert_eq!(service.send_greeting("Alice"), "Hello, Alice! \u{1F60A}");
 }
 
