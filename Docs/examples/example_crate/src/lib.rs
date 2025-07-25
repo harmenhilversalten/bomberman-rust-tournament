@@ -11,5 +11,7 @@
 pub mod implementations;
 /// Service layer types built on top of [`Greeter`] implementations.
 pub mod services;
+/// Miscellaneous helper utilities.
+pub mod helpers;
 /// Core abstractions used by this crate.
 pub mod traits;
