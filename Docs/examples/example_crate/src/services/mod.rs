@@ -1,12 +1,6 @@
 //! Service layer built on top of [`Greeter`](crate::traits::Greeter) implementations.
 
-pub mod greeting_service;
-pub mod builders {
-    //! Builder types for services.
-    pub mod greeting_service_builder;
+/// Types related to greeting messages.
+pub mod greeting;
 
-    pub use greeting_service_builder::GreetingServiceBuilder;
-}
-
-pub use greeting_service::GreetingService;
-pub use builders::GreetingServiceBuilder;
+pub use greeting::{GreetingService, GreetingServiceBuilder};

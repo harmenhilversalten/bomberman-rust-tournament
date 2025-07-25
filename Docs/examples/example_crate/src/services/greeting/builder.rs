@@ -1,8 +1,8 @@
-//! Builder for [`GreetingService`](super::super::greeting_service::GreetingService).
+//! Builder for [`GreetingService`](super::service::GreetingService).
 
 use crate::helpers::GreetingFormatter;
 use crate::traits::Greeter;
-use super::super::greeting_service::GreetingService;
+use super::service::GreetingService;
 
 /// Builder for [`GreetingService`].
 ///

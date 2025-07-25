@@ -3,7 +3,7 @@
 use crate::helpers::GreetingFormatter;
 use crate::traits::Greeter;
 
-use super::builders::GreetingServiceBuilder;
+use super::builder::GreetingServiceBuilder;
 
 /// Service that delegates greeting creation to a [`Greeter`].
 pub struct GreetingService<G: Greeter> {
