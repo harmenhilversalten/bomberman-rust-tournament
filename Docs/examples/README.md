@@ -10,14 +10,24 @@ example_crate/
 ├── Cargo.toml
 ├── src/
 │   ├── lib.rs
-│   ├── traits/
-│   │   └── greeter.rs
+│   ├── helpers/
+│   │   ├── formatter.rs
+│   │   └── mod.rs
 │   ├── implementations/
-│   │   └── english_greeter.rs
-│   └── services/
-│       └── greeting_service.rs
+│   │   ├── english_greeter.rs
+│   │   └── mod.rs
+│   ├── services/
+│   │   ├── greeting/
+│   │   │   ├── builder.rs
+│   │   │   ├── mod.rs
+│   │   │   └── service.rs
+│   │   └── simple_greeting_service.rs
+│   └── traits/
+│       ├── greeter.rs
+│       └── mod.rs
 └── tests/
-    └── greeting_service_tests.rs
+    ├── greeting_service_tests.rs
+    └── simple_greeting_service_tests.rs
 ```
 
 `traits` defines abstractions (`Greeter`) that services depend on.
