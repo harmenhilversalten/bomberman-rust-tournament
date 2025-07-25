@@ -1,6 +1,6 @@
 use example_crate::helpers::EmojiFormatter;
 use example_crate::implementations::EnglishGreeter;
-use example_crate::services::GreetingService;
+use example_crate::services::{GreetingService, GreetingServiceBuilder};
 use proptest::prelude::*;
 
 #[test]
@@ -12,6 +12,20 @@ fn greeting_service_returns_expected_greeting() {
 #[test]
 fn greeting_service_formats_output_with_emoji() {
     let service = GreetingService::with_formatter(EnglishGreeter, Box::new(EmojiFormatter));
+    assert_eq!(service.send_greeting("Alice"), "Hello, Alice! \u{1F60A}");
+}
+
+#[test]
+fn builder_creates_service_without_formatter() {
+    let service = GreetingServiceBuilder::new(EnglishGreeter).build();
+    assert_eq!(service.send_greeting("Alice"), "Hello, Alice!");
+}
+
+#[test]
+fn builder_creates_service_with_formatter() {
+    let service = GreetingServiceBuilder::new(EnglishGreeter)
+        .with_formatter(Box::new(EmojiFormatter))
+        .build();
     assert_eq!(service.send_greeting("Alice"), "Hello, Alice! \u{1F60A}");
 }
 
@@ -29,6 +43,22 @@ proptest! {
             EnglishGreeter,
             Box::new(EmojiFormatter),
         );
+        let expected = format!("Hello, {name}! \u{1F60A}");
+        prop_assert_eq!(service.send_greeting(&name), expected);
+    }
+
+    #[test]
+    fn builder_service_prop(name in "[A-Za-z]{1,16}") {
+        let service = GreetingServiceBuilder::new(EnglishGreeter).build();
+        let expected = format!("Hello, {name}!");
+        prop_assert_eq!(service.send_greeting(&name), expected);
+    }
+
+    #[test]
+    fn builder_with_formatter_prop(name in "[A-Za-z]{1,16}") {
+        let service = GreetingServiceBuilder::new(EnglishGreeter)
+            .with_formatter(Box::new(EmojiFormatter))
+            .build();
         let expected = format!("Hello, {name}! \u{1F60A}");
         prop_assert_eq!(service.send_greeting(&name), expected);
     }

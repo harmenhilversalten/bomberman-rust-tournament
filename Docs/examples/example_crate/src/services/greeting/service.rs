@@ -3,6 +3,8 @@
 use crate::helpers::GreetingFormatter;
 use crate::traits::Greeter;
 
+use super::builder::GreetingServiceBuilder;
+
 /// Service that delegates greeting creation to a [`Greeter`].
 pub struct GreetingService<G: Greeter> {
     greeter: G,
@@ -10,20 +12,23 @@ pub struct GreetingService<G: Greeter> {
 }
 
 impl<G: Greeter> GreetingService<G> {
+    pub(crate) fn from_parts(
+        greeter: G,
+        formatter: Option<Box<dyn GreetingFormatter>>, 
+    ) -> Self {
+        Self { greeter, formatter }
+    }
+
     /// Create a new service backed by the provided `greeter`.
     pub fn new(greeter: G) -> Self {
-        Self {
-            greeter,
-            formatter: None,
-        }
+        GreetingServiceBuilder::new(greeter).build()
     }
 
     /// Create a new service backed by the provided `greeter` and `formatter`.
     pub fn with_formatter(greeter: G, formatter: Box<dyn GreetingFormatter>) -> Self {
-        Self {
-            greeter,
-            formatter: Some(formatter),
-        }
+        GreetingServiceBuilder::new(greeter)
+            .with_formatter(formatter)
+            .build()
     }
 
     /// Generate a greeting for `name`.
