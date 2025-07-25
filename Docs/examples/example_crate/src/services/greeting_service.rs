@@ -1,9 +1,9 @@
-//! Service implementations that make use of [`Greeter`](crate::traits::Greeter).
+//! Service implementations that make use of [`crate::traits::Greeter`].
 
 use crate::helpers::GreetingFormatter;
 use crate::traits::Greeter;
 
-/// Service that delegates greeting creation to a [`Greeter`].
+/// Service that delegates greeting creation to a [`crate::traits::Greeter`].
 pub struct GreetingService<G: Greeter> {
     greeter: G,
     formatter: Option<Box<dyn GreetingFormatter>>,

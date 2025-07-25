@@ -1,4 +1,4 @@
-//! Collection of concrete [`Greeter`](crate::traits::Greeter) implementations.
+//! Collection of concrete [`crate::traits::Greeter`] implementations.
 
 pub mod english_greeter;
 

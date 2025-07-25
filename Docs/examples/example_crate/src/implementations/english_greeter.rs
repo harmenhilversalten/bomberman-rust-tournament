@@ -1,4 +1,4 @@
-//! Implementation of [`Greeter`](crate::traits::Greeter) that outputs messages in English.
+//! Implementation of [`crate::traits::Greeter`] that outputs messages in English.
 
 use crate::traits::Greeter;
 

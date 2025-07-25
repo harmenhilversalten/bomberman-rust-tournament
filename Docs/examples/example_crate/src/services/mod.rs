@@ -1,4 +1,4 @@
-//! Service layer built on top of [`Greeter`](crate::traits::Greeter) implementations.
+//! Service layer built on top of [`crate::traits::Greeter`] implementations.
 
 pub mod greeting_service;
 
