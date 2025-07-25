@@ -1,5 +1,8 @@
+//! Implementation of [`Greeter`](crate::traits::Greeter) that outputs messages in English.
+
 use crate::traits::Greeter;
 
+/// Greeter implementation that produces English messages.
 pub struct EnglishGreeter;
 
 impl Greeter for EnglishGreeter {
