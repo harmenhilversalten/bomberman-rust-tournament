@@ -19,10 +19,7 @@ impl<G: Greeter> GreetingService<G> {
     }
 
     /// Create a new service backed by the provided `greeter` and `formatter`.
-    pub fn with_formatter(
-        greeter: G,
-        formatter: Box<dyn GreetingFormatter>,
-    ) -> Self {
+    pub fn with_formatter(greeter: G, formatter: Box<dyn GreetingFormatter>) -> Self {
         Self {
             greeter,
             formatter: Some(formatter),
