@@ -86,7 +86,7 @@ impl Game {
             map_settings,
             map,
             bots: players,
-            player_count: player_count,
+            player_count,
             turn: 0,
             shrink_at_turn: endgame,
             player_actions: Vec::new(),
@@ -94,8 +94,8 @@ impl Game {
             // initialize alive player and shuffle them
             alive_players: Vec::new(),
             bomb_range: 3, // Default bomb range, can be adjusted as needed
-            width: width,
-            height: height,
+            width,
+            height,
             display: Box::new(ConsoleDisplay),
         }
     }
@@ -191,13 +191,13 @@ impl Game {
                 if let Some(player_index) = self.map.get_player_index_at_location(shrink_location) {
                     // Remove the player from the game
                     let playername = self.map.get_player_name(player_index);
-                    if let Some(player_name) = playername
-                        && let Some(cb) = logging_callback
-                    {
-                        cb(format!(
-                            "Player {} has been removed from the game due to shrinking at location {:?}",
-                            player_name, shrink_location
-                        ));
+                    if let Some(player_name) = playername {
+                        if let Some(cb) = logging_callback {
+                            cb(format!(
+                                "Player {} has been removed from the game due to shrinking at location {:?}",
+                                player_name, shrink_location
+                            ));
+                        }
                     }
 
                     self.alive_players.retain(|&x| x != player_index);
