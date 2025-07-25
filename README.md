@@ -9,3 +9,4 @@ that participants write bots, improve bots and let the system run tournaments to
 
 You know C++? C#? Great, Rust provides a good way to get you finally into productive mode, especially if you are working with threads or low level code.
 
+See [Docs/examples/example_crate](Docs/examples/example_crate) for a minimal example crate demonstrating SOLID design.
