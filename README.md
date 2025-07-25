@@ -9,3 +9,9 @@ that participants write bots, improve bots and let the system run tournaments to
 
 You know C++? C#? Great, Rust provides a good way to get you finally into productive mode, especially if you are working with threads or low level code.
 
+## Documentation
+
+Additional documentation can be found in the `Docs/` directory. A minimal
+reference crate showing SOLID code organization lives in
+`Docs/examples/example_crate`.
+

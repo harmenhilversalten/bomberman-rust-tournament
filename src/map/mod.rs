@@ -72,8 +72,8 @@ impl Map {
                 .cloned()
                 .zip(player_locations.iter().cloned())
                 .map(|(name, position)| Player {
-                    name: name,
-                    position: position, // Initial position will be set later
+                    name,
+                    position, // Initial position will be set later
                 })
                 .collect(),
             bombs: Vec::new(),
