@@ -1,12 +1,11 @@
 # Example Crate
 
-This directory contains `example_crate`, a small project showcasing
-how to structure Rust code according to the SOLID guidelines.  The
-crate uses a lightweight dependency injection container and keeps
-services, providers and processors in dedicated folders for easy
-testing and extensibility.
+This directory contains `example_crate`, a small project demonstrating a service-oriented architecture with a lightweight dependency injection container. The crate is organized according to the SOLID guidelines and serves as reference code for agents building new crates.
 
-```
+## Folder Structure
+The template includes optional folders that can be added only when needed:
+
+```text
 example_crate/
 ├── Cargo.toml
 ├── src/
@@ -14,12 +13,12 @@ example_crate/
 │   ├── config.rs
 │   ├── container.rs
 │   ├── error.rs
-│   ├── helpers/
-│   ├── models/
-│   ├── processors/
+│   ├── services/
 │   ├── providers/
+│   ├── processors/
 │   ├── adapters/
-│   └── services/
+│   ├── helpers/
+│   └── models/
 └── tests/
     ├── container_tests.rs
     ├── helpers_tests.rs
@@ -28,16 +27,17 @@ example_crate/
     └── services_tests.rs
 ```
 
-`services` expose traits and basic implementations. `providers` offer
-external data, while `processors` combine these pieces into higher level
-logic. `adapters` translate between interfaces. Models and helper functions can be added as needed. This layout
-keeps units small and straightforward to test.
+Services expose traits and baseline implementations. Providers offer external data while processors combine these pieces into higher level logic. Adapters translate between interfaces when needed. Helpers and models host utilities and data structures. This layout keeps units small and straightforward to test.
 
-Run the tests with:
+## Adding a New Service
+1. Define a trait in `src/services` or `src/providers`.
+2. Implement the trait in its own module.
+3. Expose the trait and implementation from the corresponding `mod.rs`.
+4. Register the implementation in `container.rs` or expose a constructor so processors can use it.
+
+## Running Tests
+Run the tests from the repository root with:
 
 ```bash
 cargo test --manifest-path Docs/examples/example_crate/Cargo.toml
 ```
-
-This crate is intended as reference code for agents wanting to build
-manageable, well-structured crates.
