@@ -1,9 +1,11 @@
 [package]
 name = "example_crate"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+thiserror = "1"
+uuid = { version = "1", features = ["v4"] }
 
 [dev-dependencies]
-proptest = "1.4"
+mockall = "0.11"

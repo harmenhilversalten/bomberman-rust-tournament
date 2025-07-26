@@ -1,5 +1,6 @@
-//! Helper utilities for the example crate.
+//! Helper utilities.
 
-pub mod formatter;
-
-pub use formatter::{EmojiFormatter, GreetingFormatter};
+/// Convert a string to uppercase.
+pub fn shout(input: &str) -> String {
+    input.to_uppercase()
+}

@@ -1,0 +1,7 @@
+fmt:
+cargo fmt --check
+clippy:
+cargo clippy -- -D warnings
+test:
+cargo test
+ci: fmt clippy test
