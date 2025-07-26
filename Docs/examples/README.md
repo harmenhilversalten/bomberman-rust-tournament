@@ -18,6 +18,7 @@ example_crate/
 │   ├── models/
 │   ├── processors/
 │   ├── providers/
+│   ├── adapters/
 │   └── services/
 └── tests/
     ├── container_tests.rs
@@ -29,7 +30,7 @@ example_crate/
 
 `services` expose traits and basic implementations. `providers` offer
 external data, while `processors` combine these pieces into higher level
-logic. Models and helper functions can be added as needed. This layout
+logic. `adapters` translate between interfaces. Models and helper functions can be added as needed. This layout
 keeps units small and straightforward to test.
 
 Run the tests with:

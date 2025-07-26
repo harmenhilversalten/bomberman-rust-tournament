@@ -29,4 +29,9 @@ impl Container {
     pub fn greeter_processor(&self) -> super::processors::GreeterProcessor {
         super::processors::GreeterProcessor::new(self.greeting.as_ref(), self.uuid.as_ref())
     }
+
+    /// Access the [`DefaultUuidStringAdapter`].
+    pub fn uuid_string_adapter(&self) -> super::adapters::DefaultUuidStringAdapter {
+        super::adapters::DefaultUuidStringAdapter::new(self.uuid.as_ref())
+    }
 }
