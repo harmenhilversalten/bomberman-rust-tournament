@@ -24,3 +24,10 @@ Any subset of these directories may be used. For instance, a crate might only de
 2. Implement the trait in its own module.
 3. Expose the trait and implementation in the corresponding `mod.rs`.
 4. Register the implementation in `container.rs` or provide a constructor so processors can use it.
+
+## Running Tests
+Execute the tests from the repository root with:
+
+```bash
+cargo test --manifest-path Docs/examples/example_crate/Cargo.toml
+```
