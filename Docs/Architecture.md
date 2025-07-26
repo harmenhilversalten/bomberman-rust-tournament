@@ -428,4 +428,38 @@ This setup allows the new crate to access the public APIs of these internal libr
 
 A key design principle for the bomberman_ai framework is to maintain a high degree of safety and a minimal, well-defined API surface for its constituent crates. The #![forbid(unsafe_code)] attribute will be used at the top of each crate's lib.rs (except for the optional ffi crate, where unsafe might be necessary for interfacing with C libraries or system calls). This strict prohibition of unsafe code ensures that the vast majority of the framework benefits from Rust's memory safety guarantees, significantly reducing the risk of undefined behavior, data races, and other common vulnerabilities associated with systems programming. By keeping the API surface of each crate minimal and focused, the framework becomes easier to learn, use, and maintain. It also reduces the likelihood of breaking changes when internal implementations are modified, as long as the public API remains stable. This disciplined approach to API design and safety contributes to the overall robustness and reliability of the AI agents built using this framework.
 
+## 15. Common Design Patterns
+
+The repository encourages SOLID, modular code. Several design patterns help
+structure bots and services effectively. The reference implementation in
+[`Docs/examples/example_crate`](examples/example_crate/README.md) showcases a
+service-oriented layout with lightweight dependency injection. The following
+patterns are recommended when building new crates or expanding existing ones.
+
+### 15.1 Strategy for Bot Behavior
+
+Use the **Strategy** pattern when a bot should support interchangeable decision
+algorithms. Implement a `BotStrategy` trait with a `decide` method and swap
+implementations at runtime via configuration or testing. This keeps the core bot
+agnostic of specific heuristics or learning algorithms.
+
+### 15.2 Command for Game Actions
+
+Represent player actions as command objects that encapsulate all data required
+to apply them. The existing `Command` enum is a starting point; extending it and
+processing commands through a dispatcher keeps game logic decoupled from bot
+code.
+
+### 15.3 Builder for Configuration
+
+Configuration structs can grow large as features expand. Employ the **Builder**
+pattern to construct them with sensible defaults and optional parameters. This
+avoids lengthy constructors and makes tests easier to read.
+
+### 15.4 Dependency Injection for Services
+
+Complex crates often rely on services that can be mocked during testing. Use a
+simple dependency injection container, similar to the example crate, to register
+service implementations. Inject interfaces into processors rather than creating
+them directly so that units remain small and testable.
 (End of document)
