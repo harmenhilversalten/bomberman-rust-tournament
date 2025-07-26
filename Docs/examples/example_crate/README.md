@@ -13,11 +13,12 @@ src/
 ├── services/      # service traits and implementations
 ├── providers/     # provider traits and implementations
 ├── processors/    # logic consuming services
+├── adapters/      # traits adapting providers or services (optional)
 ├── helpers/       # small utility functions (optional)
 └── models/        # data models (optional)
 ```
 
-Any subset of these directories may be used. For instance, a crate might only define models or services.
+Any subset of these directories may be used. For instance, a crate might only define models or services. Adapters are optional wrappers that expose existing providers or services through a different interface.
 
 ## Adding a New Service
 1. Define a trait in `src/services` or `src/providers`.

@@ -8,6 +8,7 @@ pub mod config;
 pub mod container;
 pub mod error;
 pub mod processors;
+pub mod adapters;
 pub mod providers;
 pub mod services;
 pub mod helpers;
