@@ -1,5 +1,5 @@
-use example_crate::{config::Config, container::Container};
 use example_crate::adapters::UuidStringAdapter;
+use example_crate::{config::Config, container::Container};
 
 #[test]
 fn container_provides_processor() {
