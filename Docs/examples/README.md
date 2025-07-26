@@ -1,39 +1,36 @@
 # Example Crate
 
-This directory provides a minimal Rust crate named `example_crate` that
-illustrates how to organize code following SOLID principles.
-The layout keeps traits, implementations and services in separate
-folders so that components remain easy to test and extend.
+This directory contains `example_crate`, a small project showcasing
+how to structure Rust code according to the SOLID guidelines.  The
+crate uses a lightweight dependency injection container and keeps
+services, providers and processors in dedicated folders for easy
+testing and extensibility.
 
 ```
 example_crate/
 ├── Cargo.toml
 ├── src/
 │   ├── lib.rs
+│   ├── config.rs
+│   ├── container.rs
+│   ├── error.rs
 │   ├── helpers/
-│   │   ├── formatter.rs
-│   │   └── mod.rs
-│   ├── implementations/
-│   │   ├── english_greeter.rs
-│   │   └── mod.rs
-│   ├── services/
-│   │   ├── greeting/
-│   │   │   ├── builder.rs
-│   │   │   ├── mod.rs
-│   │   │   └── service.rs
-│   │   └── simple_greeting_service.rs
-│   └── traits/
-│       ├── greeter.rs
-│       └── mod.rs
+│   ├── models/
+│   ├── processors/
+│   ├── providers/
+│   └── services/
 └── tests/
-    ├── greeting_service_tests.rs
-    └── simple_greeting_service_tests.rs
+    ├── container_tests.rs
+    ├── helpers_tests.rs
+    ├── models_tests.rs
+    ├── processor_tests.rs
+    └── services_tests.rs
 ```
 
-`traits` defines abstractions (`Greeter`) that services depend on.
-Concrete implementations live in the `implementations` folder. Services
-compose these implementations through generic parameters, enabling loose
-coupling and straightforward unit testing.
+`services` expose traits and basic implementations. `providers` offer
+external data, while `processors` combine these pieces into higher level
+logic. Models and helper functions can be added as needed. This layout
+keeps units small and straightforward to test.
 
 Run the tests with:
 
