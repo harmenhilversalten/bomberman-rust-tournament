@@ -432,7 +432,7 @@ A key design principle for the bomberman_ai framework is to maintain a high degr
 
 The repository encourages SOLID, modular code. Several design patterns help
 structure bots and services effectively. The reference implementation in
-[`Docs/examples/example_crate`](examples/example_crate/README.md) showcases a
+[`Docs/examples`](examples/README.md) showcases a
 service-oriented layout with lightweight dependency injection. The following
 patterns are recommended when building new crates or expanding existing ones.
 
