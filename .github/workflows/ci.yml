@@ -13,13 +13,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: [stable, beta, nightly]
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.toolchain }}
           profile: minimal
-      - run: cargo fmt --check --manifest-path Docs/examples/example_crate/Cargo.toml
-      - run: cargo clippy -- -D warnings --manifest-path Docs/examples/example_crate/Cargo.toml
-      - run: cargo test --all --manifest-path Docs/examples/example_crate/Cargo.toml
-      - run: cargo test --doc --manifest-path Docs/examples/example_crate/Cargo.toml
+      - run: cargo fmt --all -- --check
+        working-directory: Docs/examples/example_crate
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: Docs/examples/example_crate
+      - run: cargo test --all
+        working-directory: Docs/examples/example_crate
+      - run: cargo test --doc
+        working-directory: Docs/examples/example_crate
+      - run: cargo doc --no-deps
+        working-directory: Docs/examples/example_crate

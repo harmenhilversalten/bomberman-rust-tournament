@@ -20,8 +20,9 @@ pub trait NameProvider: Interface {
 #[shaku(interface = NameProvider)]
 pub struct StaticNameProvider {
     /// Name returned by [`name`](NameProvider::name).
+    #[doc(hidden)]
     #[shaku(default = "World".to_owned())]
-    name: String,
+    pub(crate) name: String,
 }
 
 impl Default for StaticNameProvider {

@@ -1,6 +1,5 @@
 #![forbid(unsafe_code)]
-#![deny(missing_docs)]
-#![warn(clippy::all)]
+#![warn(missing_docs, clippy::all)]
 
 //! Minimal service oriented crate using `shaku` for dependency injection.
 //! Optional logging is available via the `logging` feature.
