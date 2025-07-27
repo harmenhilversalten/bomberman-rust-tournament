@@ -1,7 +1,9 @@
 fmt:
-cargo fmt --check
+	cargo fmt --check
 clippy:
-cargo clippy -- -D warnings
+	cargo clippy -- -D warnings
+audit:
+	cargo audit --locked
 test:
-cargo test
-ci: fmt clippy test
+	cargo test
+ci: fmt clippy test audit

@@ -1,21 +1,31 @@
 # example_crate
 
-> A minimal, idiomatic, AI-friendly Rust crate demonstrating
-> service-oriented architecture with dependency injection.
+A self-contained demonstration of compile-time dependency injection using
+[`shaku`](https://crates.io/crates/shaku). The crate exposes a small service
+oriented architecture consisting of a `Greeter` service, a `NameProvider`
+provider and a `HelloWorldProcessor` that combines both. Utilities live in the
+`string_helpers` module and all fallible operations use an error type based on
+[`thiserror`](https://crates.io/crates/thiserror).
 
+## Layout
 
+```
 src/
-├── lib.rs          # Crate root & public re-exports
-├── config.rs       # Configuration structs
-├── container.rs    # Lightweight DI container
-├── error.rs        # Error type via `thiserror`
-├── services/       # Traits + impls for business logic
-├── providers/      # External data providers
-├── processors/     # High-level orchestration
-├── adapters/       # Interface adapters (e.g., tracing)
-├── helpers/        # Small utilities
-└── models/         # Plain data structures
-# User-provided custom instructions
+├── lib.rs            # Crate root and exports
+├── container.rs      # shaku module declaration
+├── error.rs          # Error definitions
+├── helpers/
+│   └── string_helpers.rs
+├── processors/
+│   └── hello_world.rs
+├── providers/
+│   └── name_provider.rs
+└── services/
+    └── greeter.rs
+```
 
-Make sure code is SOLID and is made with manageable architecture in mind.
-Implement unittests for each new feature added.
+Run the example with:
+
+```bash
+cargo run --example demo --manifest-path Docs/examples/example_crate/Cargo.toml
+```

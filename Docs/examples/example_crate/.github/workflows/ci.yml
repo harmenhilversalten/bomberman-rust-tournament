@@ -1,0 +1,22 @@
+name: CI
+on:
+  push:
+    paths: ["Docs/examples/example_crate/**"]
+  pull_request:
+    paths: ["Docs/examples/example_crate/**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy,rustfmt
+          override: true
+      - uses: taiki-e/install-action@cargo-audit
+      - run: cargo fmt --check --manifest-path Docs/examples/example_crate/Cargo.toml
+      - run: cargo clippy --manifest-path Docs/examples/example_crate/Cargo.toml -- -D warnings
+      - run: cargo test --manifest-path Docs/examples/example_crate/Cargo.toml
+      - run: cargo audit --manifest-path Docs/examples/example_crate/Cargo.toml

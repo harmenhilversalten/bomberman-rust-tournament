@@ -1,6 +1,5 @@
-//! Provider module.
 //! Provider traits and implementations.
 
-mod uuid;
+mod name_provider;
 
-pub use uuid::{DefaultUuidProvider, UuidProvider};
+pub use name_provider::{NameProvider, StaticNameProvider};
