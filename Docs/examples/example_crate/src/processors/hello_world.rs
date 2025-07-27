@@ -18,8 +18,10 @@ use tracing::info;
 
 /// Processor that generates a greeting using injected components.
 pub struct HelloWorldProcessor {
-    greeter: Arc<dyn Greeter>,
-    name_provider: Arc<dyn NameProvider>,
+    #[doc(hidden)]
+    pub(crate) greeter: Arc<dyn Greeter>,
+    #[doc(hidden)]
+    pub(crate) name_provider: Arc<dyn NameProvider>,
 }
 
 impl HelloWorldProcessor {
