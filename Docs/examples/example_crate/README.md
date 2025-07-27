@@ -2,16 +2,30 @@
 
 A tiny service oriented crate demonstrating compile-time dependency injection
 with [`shaku`](https://crates.io/crates/shaku). It exposes a greeting workflow
-and includes optional logging and a small configuration loader.
+and includes a configuration loader. Optional features enable tracing based
+logging and `serde` serialization for the models.
 
 ## Quick start
 
 ```bash
 # build and run tests
 cargo test --manifest-path Docs/examples/example_crate/Cargo.toml
-# run the example
-cargo run --example demo --manifest-path Docs/examples/example_crate/Cargo.toml
+# run the example with logging enabled
+GREETING_PREFIX=Hi \
+  cargo run --example demo \
+  --manifest-path Docs/examples/example_crate/Cargo.toml \
+  --features logging
 ```
+
+## Features
+
+- `logging` – enables tracing output and the `demo` example.
+- `serde` – adds serialization support for models.
+
+## Configuration
+
+`Config::load` reads the optional `GREETING_PREFIX` environment variable. If the
+variable is unset, the prefix defaults to `"Hello"`.
 
 ## Architecture
 
@@ -40,6 +54,7 @@ cargo run --example demo --manifest-path Docs/examples/example_crate/Cargo.toml
 ```
 
 All public types include thorough documentation with runnable examples.
+Unit and property-based tests live under `tests/`.
 
 ## Adding a new service
 
