@@ -26,7 +26,9 @@ pub struct StaticNameProvider {
 
 impl Default for StaticNameProvider {
     fn default() -> Self {
-        Self { name: "World".into() }
+        Self {
+            name: "World".into(),
+        }
     }
 }
 

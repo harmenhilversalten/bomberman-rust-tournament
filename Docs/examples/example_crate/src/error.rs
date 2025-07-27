@@ -17,4 +17,7 @@ pub enum Error {
     /// A generic error with a message.
     #[error("{0}")]
     Generic(String),
+    /// Configuration related error.
+    #[error("config error: {0}")]
+    Config(String),
 }

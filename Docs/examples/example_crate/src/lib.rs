@@ -3,6 +3,7 @@
 #![warn(clippy::all)]
 
 //! Minimal service oriented crate using `shaku` for dependency injection.
+//! Optional logging is available via the `logging` feature.
 //!
 //! ```
 //! use example_crate::{container::AppModule, processors::HelloWorldProcessor};
@@ -15,10 +16,11 @@
 //! assert_eq!(greeting.message, "Hello, World!");
 //! ```
 
+pub mod config;
 pub mod container;
 pub mod error;
 pub mod helpers;
+pub mod models;
 pub mod processors;
 pub mod providers;
 pub mod services;
-pub mod models;

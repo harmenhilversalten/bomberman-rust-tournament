@@ -18,6 +18,8 @@ impl Greeting {
     /// Create a new greeting from the provided `message`.
     #[must_use]
     pub fn new(message: impl Into<String>) -> Self {
-        Self { message: message.into() }
+        Self {
+            message: message.into(),
+        }
     }
 }
