@@ -1,6 +1,5 @@
-//! Service module.
 //! Service traits and implementations.
 
-mod greeting;
+mod greeter;
 
-pub use greeting::{DefaultGreetingService, GreetingService};
+pub use greeter::{EnglishGreeter, Greeter};

@@ -1,6 +1,5 @@
-//! Processor module.
-//! Processors consuming services.
+//! High level processors.
 
-mod greeter;
+mod hello_world;
 
-pub use greeter::GreeterProcessor;
+pub use hello_world::HelloWorldProcessor;
