@@ -9,7 +9,7 @@ fn processor_outputs_greeting() {
     let name_provider = module.resolve();
     let processor = HelloWorldProcessor::new(greeter, name_provider);
     let out = processor.run().unwrap();
-    assert_eq!(out, "Hello, World!");
+    assert_eq!(out.message, "Hello, World!");
 }
 
 proptest! {

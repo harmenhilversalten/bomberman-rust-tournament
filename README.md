@@ -14,4 +14,3 @@ You know C++? C#? Great, Rust provides a good way to get you finally into produc
 Additional documentation can be found in the `Docs/` directory. A minimal
 reference crate showcasing SOLID code organization resides under
 `Docs/examples`. See `Docs/examples/README.md` for details.
-

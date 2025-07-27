@@ -11,7 +11,8 @@
 //! let greeter = module.resolve();
 //! let name_provider = module.resolve();
 //! let processor = HelloWorldProcessor::new(greeter, name_provider);
-//! assert_eq!(processor.run().unwrap(), "Hello, World!");
+//! let greeting = processor.run().unwrap();
+//! assert_eq!(greeting.message, "Hello, World!");
 //! ```
 
 pub mod container;
@@ -20,3 +21,4 @@ pub mod helpers;
 pub mod processors;
 pub mod providers;
 pub mod services;
+pub mod models;
