@@ -6,6 +6,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let greeter = module.resolve();
     let name_provider = module.resolve();
     let processor = HelloWorldProcessor::new(greeter, name_provider);
-    println!("{}", processor.run()?);
+    println!("{}", processor.run()?.message);
     Ok(())
 }

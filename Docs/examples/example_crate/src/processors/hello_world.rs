@@ -1,8 +1,18 @@
 //! High-level processor combining services.
+//!
+//! ```
+//! use example_crate::{container::AppModule, processors::HelloWorldProcessor};
+//! use shaku::HasComponent;
+//! let module = AppModule::builder().build();
+//! let greeter = module.resolve();
+//! let name_provider = module.resolve();
+//! let processor = HelloWorldProcessor::new(greeter, name_provider);
+//! let greeting = processor.run().unwrap();
+//! assert_eq!(greeting.message, "Hello, World!");
+//! ```
 
-use crate::error::Result;
-use crate::providers::NameProvider;
-use crate::services::Greeter;
+use crate::{error::Result, models::Greeting, providers::NameProvider, services::Greeter};
+use tracing::info;
 use std::sync::Arc;
 
 /// Processor that generates a greeting using injected components.
@@ -22,8 +32,10 @@ impl HelloWorldProcessor {
     }
 
     /// Produce the greeting message.
-    pub fn run(&self) -> Result<String> {
+    pub fn run(&self) -> Result<Greeting> {
         let name = self.name_provider.name()?;
-        self.greeter.greet(&name)
+        let msg = self.greeter.greet(&name)?;
+        info!(target: "processor", %msg, "generated greeting");
+        Ok(Greeting::new(msg))
     }
 }

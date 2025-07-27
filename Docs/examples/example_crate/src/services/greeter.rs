@@ -1,4 +1,10 @@
 //! Greeting service trait and implementation.
+//!
+//! ```
+//! use example_crate::services::{Greeter, EnglishGreeter};
+//! let g = EnglishGreeter;
+//! assert_eq!(g.greet("Rust").unwrap(), "Hello, Rust!");
+//! ```
 
 use crate::error::Result;
 use shaku::{Component, Interface};

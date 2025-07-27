@@ -1,4 +1,10 @@
 //! Crate-wide error definitions.
+//!
+//! ```
+//! use example_crate::error::{Error, Result};
+//! fn always_fails() -> Result<()> { Err(Error::Generic("oops".into())) }
+//! assert!(always_fails().is_err());
+//! ```
 
 use thiserror::Error;
 
