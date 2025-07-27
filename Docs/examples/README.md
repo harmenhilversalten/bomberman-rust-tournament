@@ -16,18 +16,16 @@ example_crate/
 │   ├── services/
 │   ├── providers/
 │   ├── processors/
-│   ├── adapters/
 │   ├── helpers/
 │   └── models/
 └── tests/
-    ├── container_tests.rs
-    ├── helpers_tests.rs
+    ├── config_tests.rs
+    ├── integration_test.rs
     ├── models_tests.rs
-    ├── processor_tests.rs
-    └── services_tests.rs
+    └── proptests.rs
 ```
 
-Services expose traits and baseline implementations. Providers offer external data while processors combine these pieces into higher level logic. Adapters translate between interfaces when needed. Helpers and models host utilities and data structures. This layout keeps units small and straightforward to test.
+Services expose traits and baseline implementations. Providers offer external data while processors combine these pieces into higher level logic. Helpers and models host utilities and data structures. This layout keeps units small and straightforward to test.
 
 ## Adding a New Service
 1. Define a trait in `src/services` or `src/providers`.
