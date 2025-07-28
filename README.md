@@ -1,16 +1,25 @@
-Bomberman Using Rust Project - BURP
+# Bomberman Using Rust Project
 
-= Goals
+This repository hosts a small Bomberman inspired tournament runner written in Rust.
+It serves as a playground to explore the language while incrementally adopting
+the architecture described in `Docs/Architecture.md`.
 
-This project is intended as a small project to discover the main features and language idiom of Rust. The main idea is 
-that participants write bots, improve bots and let the system run tournaments to determine the best bot.
+## Running
 
-= What is Rust
+Build and launch a tournament with the default settings:
 
-You know C++? C#? Great, Rust provides a good way to get you finally into productive mode, especially if you are working with threads or low level code.
+```bash
+cargo run --release
+```
+
+Execute all unit and integration tests with:
+
+```bash
+cargo test --all
+```
 
 ## Documentation
 
-Additional documentation can be found in the `Docs/` directory. A minimal
-reference crate showcasing SOLID code organization resides under
-`Docs/examples`. See `Docs/examples/README.md` for details.
+Detailed design notes live in the `Docs/` directory. A fully documented example
+crate demonstrating SOLID organization and compile-time dependency injection is
+available under `Docs/examples`. See `Docs/examples/README.md` for details.

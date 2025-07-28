@@ -13,6 +13,8 @@ example_crate/
 │   ├── config.rs
 │   ├── container.rs
 │   ├── error.rs
+│   ├── bin/
+│   │   └── demo.rs
 │   ├── services/
 │   ├── providers/
 │   ├── processors/
@@ -20,9 +22,13 @@ example_crate/
 │   └── models/
 └── tests/
     ├── config_tests.rs
+    ├── container_tests.rs
+    ├── helpers_tests.rs
     ├── integration_test.rs
     ├── models_tests.rs
-    └── proptests.rs
+    ├── processor_tests.rs
+    ├── proptests.rs
+    └── services_tests.rs
 ```
 
 Services expose traits and baseline implementations. Providers offer external data while processors combine these pieces into higher level logic. Helpers and models host utilities and data structures. This layout keeps units small and straightforward to test.
