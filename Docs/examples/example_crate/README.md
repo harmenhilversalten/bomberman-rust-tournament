@@ -10,16 +10,16 @@ logging and `serde` serialization for the models.
 ```bash
 # build and run tests
 cargo test --manifest-path Docs/examples/example_crate/Cargo.toml
-# run the example with logging enabled
+# run the demo binary with logging enabled
 GREETING_PREFIX=Hi \
-  cargo run --example demo \
+  cargo run --bin demo \
   --manifest-path Docs/examples/example_crate/Cargo.toml \
   --features logging
 ```
 
 ## Features
 
-- `logging` – enables tracing output and the `demo` example.
+ - `logging` – enables tracing output and the demo binary.
 - `serde` – adds serialization support for models.
 
 ## Configuration
