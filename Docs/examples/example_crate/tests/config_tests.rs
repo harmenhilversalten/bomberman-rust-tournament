@@ -9,3 +9,11 @@ fn load_default_and_env() {
     let cfg = Config::load().unwrap();
     assert_eq!(cfg.prefix, "Hey");
 }
+
+#[test]
+fn invalid_prefix_errors() {
+    std::env::set_var("GREETING_PREFIX", "");
+    assert!(Config::load().is_err());
+    std::env::set_var("GREETING_PREFIX", "x".repeat(40));
+    assert!(Config::load().is_err());
+}
