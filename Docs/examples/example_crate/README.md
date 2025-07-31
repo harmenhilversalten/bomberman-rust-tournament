@@ -20,7 +20,8 @@ GREETING_PREFIX=Hi \
 ## Features
 
  - `logging` – enables tracing output and the demo binary.
-- `serde` – adds serialization support for models.
+ - `serde` – adds serialization support for models and config.
+ - `async` – reserved for future asynchronous examples.
 
 ## Configuration
 
@@ -55,6 +56,11 @@ variable is unset, the prefix defaults to `"Hello"`.
 
 All public types include thorough documentation with runnable examples.
 Unit and property-based tests live under `tests/`.
+
+## Helpers
+
+Utility functions for strings are available under `helpers::string_helpers` and
+include capitalization, truncation and alphanumeric validation utilities.
 
 ## Adding a new service
 
