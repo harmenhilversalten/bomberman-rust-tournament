@@ -4,9 +4,19 @@ use shaku::HasComponent;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
 
-fn main() -> Result<()> {
-    let subscriber = FmtSubscriber::new();
-    tracing::subscriber::set_global_default(subscriber).expect("set subscriber");
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("error: {e}");
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<()> {
+    #[cfg(feature = "logging")]
+    {
+        let subscriber = FmtSubscriber::new();
+        tracing::subscriber::set_global_default(subscriber).expect("set subscriber");
+    }
 
     let cfg = Config::load()?;
     let module = AppModule::builder().build();
