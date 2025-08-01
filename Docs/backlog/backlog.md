@@ -1,6 +1,6 @@
 # Bomberman AI Development Backlog
 
-This backlog lists the high level features required to evolve the current project into the architecture defined in [Docs/Architecture.md](../Architecture.md).  Each item includes a summary, key requirements and a short prompt describing the tasks to implement.  Features are ordered roughly by dependency so later tasks can rely on the preceding work.
+This backlog lists the high level features required to evolve the current project into the architecture defined in [Docs/Architecture.md](../Architecture.md).  The full architecture is decomposed under `Docs/architecture/`. Each item includes a summary, key requirements and a short prompt describing the tasks to implement.  Features are ordered roughly by dependency so later tasks can rely on the preceding work.
 
 ## 1. Restructure into Workspace
 - **Summary**: Convert the repository into a Cargo workspace with crates as outlined in Section 12.1 of the architecture document.

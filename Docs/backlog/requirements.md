@@ -1,6 +1,6 @@
 # Game Requirements
 
-This document summarizes the functional and non-functional requirements extracted from [Docs/Architecture.md](../Architecture.md).
+This document summarizes the functional and non-functional requirements extracted from [Docs/Architecture.md](../Architecture.md). Detailed sections live under `Docs/architecture/`.
 
 ## Functional Requirements
 - **Grid Based Map**: The game world is an N×N grid of `Tile` values. Tiles may be empty, indestructible walls, destructible crates or power‑ups.
