@@ -10,6 +10,8 @@ This document summarizes the functional and non-functional requirements extracte
 - **Influence Maps**: Danger levels across upcoming ticks are represented in influence maps for path and goal planning.
 - **Goals and Planning**: Agents select high‑level goals (e.g., destroy a crate or obtain a power‑up) and build plans consisting of micro moves and bomb placements.
 - **State Deltas**: Updates to game state are published as compact deltas for efficient incremental computation.
+- **Event System**: Game and bot actions emit events routed through a priority event bus as outlined in [Events Crate design](../design/events_crate.md).
+- **RL Environment**: Provide a reinforcement learning environment and loadable policy implementations per [RL Crate design](../design/rl_crate.md).
 
 ## Non-Functional Requirements
 - **Performance**: ≤1 ms median decision time per bot with ≤2 ms 95th percentile latency. Each bot is limited to 16 MB memory.
@@ -17,5 +19,6 @@ This document summarizes the functional and non-functional requirements extracte
 - **Safety**: Unsafe Rust code is forbidden (except FFI) and the codebase should be Miri compatible.
 - **Extensibility**: New game elements can be implemented in under 100 lines of code via trait-based interfaces and plugins.
 - **Concurrency**: The engine and bots run concurrently using async tasks or threads, communicating via channels.
+- **Lock-Free Snapshots**: Bots access immutable game state views via crossbeam-epoch without locks, see [Threading and Concurrency Model](../architecture/07_threading_and_concurrency_model.md).
 
 These requirements guide all development tasks and are reflected in the backlog features.
