@@ -1,0 +1,16 @@
+## 9. Testing Strategy
+
+### 9.1 Property-Based and Random Testing
+
+A comprehensive testing strategy is essential to ensure the correctness and robustness of the AI agents and the game logic. Property-based testing, using frameworks like QuickCheck or Proptest, will be employed to verify that certain invariants hold true across a wide range of inputs. For example, tests can ensure that valid moves always keep the agent within map bounds, or that bomb explosions correctly affect tiles within their blast radius. Random map generation, also facilitated by Proptest, will be used to test the AI's behavior on a variety of procedurally generated scenarios, helping to uncover edge cases that might not be apparent in hand-crafted test maps. This approach helps in validating the AI's adaptability and resilience to different game configurations. These tests will focus on the fundamental rules of the game and the basic functionalities of the AI components, providing a solid foundation of correctness.
+
+### 9.2 Replay and Benchmarking
+
+Replay functionality is a critical tool for debugging and analyzing AI behavior. The system will support saving and loading game replays, which are essentially sequences of GridDelta events and initial game states. By replaying these deltas, the exact state of the game at any tick can be reconstructed, allowing developers to step through an agent's decisions and understand its reasoning process. This is invaluable for diagnosing unexpected behaviors or verifying the impact of code changes. Complementing functional testing, Criterion benchmarks will be used to measure the performance of key AI components, such as pathfinding, influence map updates, and the overall decision-making loop. These benchmarks will help ensure that the nonfunctional requirements for throughput and latency are being met and can identify performance regressions as the codebase evolves. For RL agents, replays are also crucial for visualizing learned behaviors and comparing the performance of different trained models.
+
+### 9.3 Mocking and Unit/Integration Tests
+
+To isolate and test individual components effectively, the architecture employs mocking for dependencies. For instance, the SnapshotView can be mocked with a MockSnapshot struct that implements the necessary traits, allowing pathfinding or goal management tests to run without a full GameGrid. This is particularly useful for unit tests that focus on a single module's logic. Integration tests will combine multiple modules, such as testing the end-to-end decision-making process from goal generation to action execution, potentially using a small, fixed game scenario. For RL components, tests will include verifying that observations are correctly serialized, that policies can load and infer from mock models, and that the Gym wrapper correctly handles step and reset calls. Fuzz testing, using tools like cargo-fuzz, can be applied to critical functions like blast propagation or pathfinding to detect crashes or invalid states under random inputs. These tests, combined with CI pipelines enforcing them, ensure that the system remains reliable as it evolves. This multi-faceted testing approach aims to deliver a reliable and high-quality AI system.
+
+---
+
