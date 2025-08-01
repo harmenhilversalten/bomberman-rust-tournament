@@ -21,3 +21,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Simple bots (`easy_bot` and `random_bot`) implementing a `Bot` trait for decision making.
 - Multi-threaded tournament runner for running many games in parallel.
 - Workspace restructure with skeleton crates ([Backlog #1](../backlog/backlog.md#1-restructure-into-workspace)).
+- Core state crate structures ([Backlog #2](../backlog/backlog.md#2-state-crate-%E2%80%93-core-structures)).
