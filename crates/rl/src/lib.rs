@@ -2,17 +2,25 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, clippy::all)]
 
+/// Environment wrappers and reward logic.
+pub mod environment;
 /// Error types for RL operations.
 pub mod error;
 /// Policy implementations.
 pub mod policy;
+/// Training utilities including buffers and loops.
+pub mod training;
 /// Common data structures.
 pub mod types;
 /// Value estimator implementations.
 pub mod value;
 
+pub use environment::{
+    ActionSpace, ObservationSpace, RLEnvironment, RewardCalculator, SimpleReward,
+};
 pub use error::RLError;
 pub use policy::{Policy, PolicyType, RandomPolicy, TorchPolicy};
+pub use training::{ReplayBuffer, Trainer};
 pub use types::{Action, Observation, TrainingBatch};
 pub use value::{TorchValueEstimator, ValueEstimator};
 
@@ -58,5 +66,22 @@ mod tests {
         let v1 = estimator.get_value(&obs).unwrap();
         let v2 = loaded.get_value(&obs).unwrap();
         assert!((v1 - v2).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn environment_runs_episode_until_done() {
+        let mut env = RLEnvironment::new(3, 10, SimpleReward);
+        let mut policy = RandomPolicy::new(2, Some(1));
+        let batch = env.run_episode(&mut policy, 10).unwrap();
+        assert!(batch.dones.iter().any(|d| *d));
+    }
+
+    #[test]
+    fn trainer_populates_replay_buffer() {
+        let env = RLEnvironment::new(2, 5, SimpleReward);
+        let policy = RandomPolicy::new(2, Some(2));
+        let mut trainer = Trainer::new(env, policy, 10);
+        trainer.train(1, 5, 1).unwrap();
+        assert!(!trainer.buffer().is_empty());
     }
 }
