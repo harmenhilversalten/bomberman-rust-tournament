@@ -227,7 +227,30 @@ This backlog lists the high level features required to evolve the current projec
   - Tests run a minimal episode using a dummy policy.
 - **Prompt**: "Implement RL environment and training utilities with tests."
 
-## 29. Threading & Concurrency
+## 29. Engine Integration of Feature Crates
+- **Summary**: Replace legacy engine modules with the new crates (`bombs`, `goals`, `path`, `influence`, `events`, `bot`, `rl`) so the game loop works through the unified architecture.
+- **Requirements**:
+  - Use the `events` crate to broadcast `GameEvent` messages that drive influence-map updates, goal replanning, and RL rewards.
+  - Feed snapshots, goals, pathfinding, and bomb planning through the newly implemented crates, removing parallel legacy code.
+  - Ensure the integration honors the data-flow design where the engine updates shared state and downstream components react via deltas and events.
+- **Prompt**: "Wire up all feature crates in the engine and retire overlapping legacy modules."
+
+## 30. Bot Strategy Selection
+- **Summary**: Expose a configuration mechanism that lets the game select among three bot strategies: the existing legacy logic, the new goal-based bot, and the RL bot.
+- **Requirements**:
+  - Implement a `BotStrategy` trait and load the desired strategy at runtime, following the Strategy pattern.
+  - Ensure each strategy can subscribe to engine events and operate on snapshots.
+  - Provide tests that validate switching strategies via configuration.
+- **Prompt**: "Add selectable bot strategies (legacy, goal-based, RL) and cover them with tests."
+
+## 31. Legacy Cleanup
+- **Summary**: Remove or deprecate remaining engine code that duplicates functionality now provided by the feature crates, keeping only the legacy bot strategy for selection.
+- **Requirements**:
+  - Eliminate obsolete modules (e.g., old map, bomb, path, event logic) after confirming the replacements are fully wired.
+  - Update documentation and tests to reflect the new crate-based architecture.
+- **Prompt**: "Clean up legacy modules and docs once new integrations pass tests."
+
+## 32. Threading & Concurrency
 - **Summary**: Establish the multi-threaded execution model described in Architecture Section 7.
 - **Requirements**:
   - Engine runs in its own async task.
@@ -236,7 +259,7 @@ This backlog lists the high level features required to evolve the current projec
   - Tests spawn multiple bots and verify deterministic behavior.
 - **Prompt**: "Wire up engine and bots using async tasks and channels with tests."
 
-## 30. Test Utilities Crate
+## 33. Test Utilities Crate
 - **Summary**: Provide helpers for unit and integration testing as outlined in [design/test_utils_crate.md](../design/test_utils_crate.md).
 - **Requirements**:
   - Offer fixtures, mocks and generators for common scenarios.
@@ -244,7 +267,7 @@ This backlog lists the high level features required to evolve the current projec
   - Property tests demonstrate random map generation.
 - **Prompt**: "Create test_utils crate with mocks and property-based helpers."
 
-## 31. CI Workflows
+## 34. CI Workflows
 - **Summary**: Add GitHub Actions pipelines enforcing quality gates (Architecture Section 13).
 - **Requirements**:
   - `ci.yml` running `cargo check`, `cargo clippy -- -D warnings`, `cargo test` and `cargo miri test`.
@@ -252,7 +275,7 @@ This backlog lists the high level features required to evolve the current projec
   - `coverage.yml` running Tarpaulin and uploading to Codecov.
 - **Prompt**: "Add CI workflows and ensure they pass locally."
 
-## 32. Replay & Benchmarking Tools
+## 35. Replay & Benchmarking Tools
 - **Summary**: Provide replay capability and benchmarks referencing Architecture Section 9.2.
 - **Requirements**:
   - Serialize GridDeltas and GameEvents to disk for replay.
@@ -260,14 +283,14 @@ This backlog lists the high level features required to evolve the current projec
   - Unit tests for the replay loader.
 - **Prompt**: "Implement replay recording/loading and add benchmarks with tests."
 
-## 33. Documentation & Examples
+## 36. Documentation & Examples
 - **Summary**: Document how to create external crates and provide examples (Architecture Section 14).
 - **Requirements**:
   - Add guide in `docs/` explaining workspace usage and sample agent crate.
   - Ensure README references Architecture and backlog.
 - **Prompt**: "Write documentation showing how to depend on bomberman crates from a new project."
 
-## 34. Future Enhancements
+## 37. Future Enhancements
 - **Summary**: Items listed in the architecture roadmap (Section 11) for later phases.
 - **Requirements**:
   - GPU acceleration for influence maps.
