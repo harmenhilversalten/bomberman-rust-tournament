@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-rand = "0.9.1"
+rand = { workspace = true }
 num_cpus = "1.13"
 state = { path = "../state" }
 tokio = { workspace = true, features = ["sync"] }

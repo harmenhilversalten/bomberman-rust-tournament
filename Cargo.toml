@@ -20,7 +20,7 @@ crossbeam = "0.8"
 crossbeam-epoch = "0.9"
 criterion = "0.3"
 proptest = "1.0"
-ndarray = "0.15"
+ndarray = { version = "0.15", features = ["serde"] }
 petgraph = "0.6"
 triomphe = "0.1"
 anyhow = "1.0"
@@ -29,3 +29,4 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 bincode = "1"
 thiserror = "1"
+rand = "0.9"
