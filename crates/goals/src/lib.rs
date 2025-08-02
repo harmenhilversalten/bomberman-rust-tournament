@@ -1,17 +1,11 @@
-//! Temporary skeleton crate
+//! Goal management crate providing goal definitions and planning.
 #![forbid(unsafe_code)]
 #![warn(missing_docs, clippy::all)]
-/// Initializes the crate and returns a greeting.
-pub fn init() -> &'static str {
-    "initialized"
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Goal definitions and utilities.
+pub mod goal;
+/// Goal planning utilities.
+pub mod planner;
 
-    #[test]
-    fn init_returns_initialized() {
-        assert_eq!(init(), "initialized");
-    }
-}
+pub use goal::{Action, AvoidDangerGoal, BotId, CollectPowerUpGoal, Goal, GoalError, GoalType};
+pub use planner::{GoalPlanner, PlanningStrategy};
