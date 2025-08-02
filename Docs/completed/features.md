@@ -20,32 +20,32 @@ As new backlog features are completed, list them below with a reference to the b
 - Basic Bomberman game engine (`Game`) that simulates turns and handles bombs and player actions.
 - Simple bots (`easy_bot` and `random_bot`) implementing a `Bot` trait for decision making.
 - Multi-threaded tournament runner for running many games in parallel.
-- Workspace restructure with skeleton crates ([Backlog #1](../backlog/backlog.md#1-restructure-into-workspace)).
-- Core state crate structures ([Backlog #2](../backlog/backlog.md#2-state-crate-%E2%80%93-core-structures)).
-- Snapshot layer with immutable views ([Backlog #3](../backlog/backlog.md#3-state-crate-%E2%80%93-snapshot-layer)).
-- State serialization supporting binary and JSON formats ([Backlog #4](../backlog/backlog.md#4-state-crate-%E2%80%93-serialization)).
-- Engine core loop with delta broadcasting ([Backlog #5](../backlog/backlog.md#5-engine-crate-%E2%80%93-core-loop)).
-- Engine scheduler supporting parallel task execution ([Backlog #6](../backlog/backlog.md#6-engine-crate-%E2%80%93-scheduler)).
-- Engine systems for movement, bombs, explosions, powerups and players ([Backlog #7](../backlog/backlog.md#7-engine-crate-%E2%80%93-system-modules)).
-- Replay recording and determinism checks ([Backlog #8](../backlog/backlog.md#8-engine-crate-%E2%80%93-replay-and-determinism)).
-- Engine configuration and game rules ([Backlog #9](../backlog/backlog.md#9-engine-crate-%E2%80%93-configuration)).
-- Event types and bus with subscriber registration ([Backlog #10](../backlog/backlog.md#10-events-crate-%E2%80%93-event-types-and-bus)).
-- Event queue with priority levels and subscription filters ([Backlog #11](../backlog/backlog.md#11-events-crate-%E2%80%93-queue-and-filtering)).
-- Event serialization and RL transition recording ([Backlog #12](../backlog/backlog.md#12-events-crate-%E2%80%93-serialization-and-recording)).
-- Influence map core with danger and opportunity layers ([Backlog #13](../backlog/backlog.md#13-influence-map-crate-%E2%80%93-core-map)).
-- Influence map update strategies with incremental and full options ([Backlog #14](../backlog/backlog.md#14-influence-map-crate-%E2%80%93-update-strategies)).
-- Influence map visualization helpers and benchmarking ([Backlog #15](../backlog/backlog.md#15-influence-map-crate-%E2%80%93-visualization-and-benchmarking)).
-- Pathfinding algorithms A*, D* Lite and Jump Point Search ([Backlog #16](../backlog/backlog.md#16-path-crate-%E2%80%93-algorithm-implementations)).
-- Path grid and heuristic modules with Manhattan and Euclidean functions ([Backlog #17](../backlog/backlog.md#17-path-crate-%E2%80%93-grid-and-heuristics)).
-- Path cache with eviction policies and path optimization algorithms ([Backlog #18](../backlog/backlog.md#18-path-crate-%E2%80%93-caching-and-optimization)).
-- Bomb logic with chain reactions and explosion calculation ([Backlog #19](../backlog/backlog.md#19-bombs-crate-%E2%80%93-bomb-logic)).
-- Bomb placement strategies with safe and strategic options plus timing and remote detonation support ([Backlog #20](../backlog/backlog.md#20-bombs-crate-%E2%80%93-placement-and-timing)).
-- Bomb power effects, kicking mechanics, and analysis utilities ([Backlog #21](../backlog/backlog.md#21-bombs-crate-%E2%80%93-power-and-analysis)).
-- Goal definitions and planner ([Backlog #22](../backlog/backlog.md#22-goals-crate-%E2%80%93-goal-definitions-and-planner)).
-- Goal execution and hierarchy management ([Backlog #23](../backlog/backlog.md#23-goals-crate-%E2%80%93-execution-and-hierarchy)).
-- Bot kernel coordinating decision loop via channels ([Backlog #24](../backlog/backlog.md#24-bot-crate-%E2%80%93-core-kernel)).
-- AI modules with heuristic, reactive and planning strategies plus runtime switching ([Backlog #25](../backlog/backlog.md#25-bot-crate-%E2%80%93-ai-modules)).
-- Perception and action modules with memory and executor ([Backlog #26](../backlog/backlog.md#26-bot-crate-%E2%80%93-perception-and-action)).
-- RL policy and value estimation traits with Torch and random implementations ([Backlog #27](../backlog/backlog.md#27-rl-crate-%E2%80%93-policy-and-value-estimation)).
-- RL environment and training utilities with replay buffers ([Backlog #28](../backlog/backlog.md#28-rl-crate-%E2%80%93-environment-and-training)).
-- Engine integration of feature crates with event-driven flow ([Backlog #29](../backlog/backlog.md#29-engine-integration-of-feature-crates)).
+- Workspace restructure with skeleton crates ([Backlog #1](../backlog/completed.md#1-restructure-into-workspace)).
+- Core state crate structures ([Backlog #2](../backlog/completed.md#2-state-crate-%E2%80%93-core-structures)).
+- Snapshot layer with immutable views ([Backlog #3](../backlog/completed.md#3-state-crate-%E2%80%93-snapshot-layer)).
+- State serialization supporting binary and JSON formats ([Backlog #4](../backlog/completed.md#4-state-crate-%E2%80%93-serialization)).
+- Engine core loop with delta broadcasting ([Backlog #5](../backlog/completed.md#5-engine-crate-%E2%80%93-core-loop)).
+- Engine scheduler supporting parallel task execution ([Backlog #6](../backlog/completed.md#6-engine-crate-%E2%80%93-scheduler)).
+- Engine systems for movement, bombs, explosions, powerups and players ([Backlog #7](../backlog/completed.md#7-engine-crate-%E2%80%93-system-modules)).
+- Replay recording and determinism checks ([Backlog #8](../backlog/completed.md#8-engine-crate-%E2%80%93-replay-and-determinism)).
+- Engine configuration and game rules ([Backlog #9](../backlog/completed.md#9-engine-crate-%E2%80%93-configuration)).
+- Event types and bus with subscriber registration ([Backlog #10](../backlog/completed.md#10-events-crate-%E2%80%93-event-types-and-bus)).
+- Event queue with priority levels and subscription filters ([Backlog #11](../backlog/completed.md#11-events-crate-%E2%80%93-queue-and-filtering)).
+- Event serialization and RL transition recording ([Backlog #12](../backlog/completed.md#12-events-crate-%E2%80%93-serialization-and-recording)).
+- Influence map core with danger and opportunity layers ([Backlog #13](../backlog/completed.md#13-influence-map-crate-%E2%80%93-core-map)).
+- Influence map update strategies with incremental and full options ([Backlog #14](../backlog/completed.md#14-influence-map-crate-%E2%80%93-update-strategies)).
+- Influence map visualization helpers and benchmarking ([Backlog #15](../backlog/completed.md#15-influence-map-crate-%E2%80%93-visualization-and-benchmarking)).
+- Pathfinding algorithms A*, D* Lite and Jump Point Search ([Backlog #16](../backlog/completed.md#16-path-crate-%E2%80%93-algorithm-implementations)).
+- Path grid and heuristic modules with Manhattan and Euclidean functions ([Backlog #17](../backlog/completed.md#17-path-crate-%E2%80%93-grid-and-heuristics)).
+- Path cache with eviction policies and path optimization algorithms ([Backlog #18](../backlog/completed.md#18-path-crate-%E2%80%93-caching-and-optimization)).
+- Bomb logic with chain reactions and explosion calculation ([Backlog #19](../backlog/completed.md#19-bombs-crate-%E2%80%93-bomb-logic)).
+- Bomb placement strategies with safe and strategic options plus timing and remote detonation support ([Backlog #20](../backlog/completed.md#20-bombs-crate-%E2%80%93-placement-and-timing)).
+- Bomb power effects, kicking mechanics, and analysis utilities ([Backlog #21](../backlog/completed.md#21-bombs-crate-%E2%80%93-power-and-analysis)).
+- Goal definitions and planner ([Backlog #22](../backlog/completed.md#22-goals-crate-%E2%80%93-goal-definitions-and-planner)).
+- Goal execution and hierarchy management ([Backlog #23](../backlog/completed.md#23-goals-crate-%E2%80%93-execution-and-hierarchy)).
+- Bot kernel coordinating decision loop via channels ([Backlog #24](../backlog/completed.md#24-bot-crate-%E2%80%93-core-kernel)).
+- AI modules with heuristic, reactive and planning strategies plus runtime switching ([Backlog #25](../backlog/completed.md#25-bot-crate-%E2%80%93-ai-modules)).
+- Perception and action modules with memory and executor ([Backlog #26](../backlog/completed.md#26-bot-crate-%E2%80%93-perception-and-action)).
+- RL policy and value estimation traits with Torch and random implementations ([Backlog #27](../backlog/completed.md#27-rl-crate-%E2%80%93-policy-and-value-estimation)).
+- RL environment and training utilities with replay buffers ([Backlog #28](../backlog/completed.md#28-rl-crate-%E2%80%93-environment-and-training)).
+- Engine integration of feature crates with event-driven flow ([Backlog #29](../backlog/completed.md#29-engine-integration-of-feature-crates)).
