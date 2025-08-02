@@ -2,13 +2,19 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, clippy::all)]
 
+/// Action handling for executing decisions.
+pub mod action;
 /// Built-in AI implementations.
 pub mod ai;
 /// Bot kernel and related types.
 pub mod bot;
+/// Perception system converting snapshots into observations.
+pub mod perception;
 
+pub use action::{Action, ActionExecutor, ActionResult};
 pub use ai::{AiType, HeuristicAI, PlanningAI, ReactiveAI, SwitchingAI};
 pub use bot::{Bot, BotConfig, BotState, DecisionMaker};
+pub use perception::{BotMemory, Observation, PerceptionSystem};
 
 /// Initializes the crate and returns a greeting.
 pub fn init() -> &'static str {

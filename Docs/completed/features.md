@@ -45,3 +45,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Goal execution and hierarchy management ([Backlog #23](../backlog/backlog.md#23-goals-crate-%E2%80%93-execution-and-hierarchy)).
 - Bot kernel coordinating decision loop via channels ([Backlog #24](../backlog/backlog.md#24-bot-crate-%E2%80%93-core-kernel)).
 - AI modules with heuristic, reactive and planning strategies plus runtime switching ([Backlog #25](../backlog/backlog.md#25-bot-crate-%E2%80%93-ai-modules)).
+- Perception and action modules with memory and executor ([Backlog #26](../backlog/backlog.md#26-bot-crate-%E2%80%93-perception-and-action)).
