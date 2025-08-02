@@ -2,6 +2,7 @@
 
 use std::sync::{Arc, RwLock};
 
+use events::bus::EventBus;
 use state::grid::{GameGrid, GridDelta};
 
 /// Trait implemented by all engine systems.
@@ -9,7 +10,7 @@ pub trait System: Send {
     /// Name of the system.
     fn name(&self) -> &str;
     /// Run the system returning an optional grid delta to apply.
-    fn run(&mut self, grid: &Arc<RwLock<GameGrid>>) -> Option<GridDelta>;
+    fn run(&mut self, grid: &Arc<RwLock<GameGrid>>, events: &EventBus) -> Option<GridDelta>;
     /// Names of systems that must run before this one.
     fn dependencies(&self) -> &[&'static str] {
         &[]
@@ -45,7 +46,7 @@ mod tests {
             height: 2,
             ..EngineConfig::default()
         };
-        let (mut engine, _rx) = Engine::new(cfg);
+        let (mut engine, _rx, _events) = Engine::new(cfg);
         engine.add_system(Box::new(MovementSystem::new()));
         engine.add_system(Box::new(PlayerSystem::new()));
         engine.add_system(Box::new(BombSystem::new()));

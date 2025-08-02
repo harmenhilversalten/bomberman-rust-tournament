@@ -48,3 +48,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Perception and action modules with memory and executor ([Backlog #26](../backlog/backlog.md#26-bot-crate-%E2%80%93-perception-and-action)).
 - RL policy and value estimation traits with Torch and random implementations ([Backlog #27](../backlog/backlog.md#27-rl-crate-%E2%80%93-policy-and-value-estimation)).
 - RL environment and training utilities with replay buffers ([Backlog #28](../backlog/backlog.md#28-rl-crate-%E2%80%93-environment-and-training)).
+- Engine integration of feature crates with event-driven flow ([Backlog #29](../backlog/backlog.md#29-engine-integration-of-feature-crates)).
