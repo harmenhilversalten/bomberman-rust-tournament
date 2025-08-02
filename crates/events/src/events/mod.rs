@@ -1,0 +1,20 @@
+//! Event type definitions.
+
+pub mod bot_events;
+pub mod game_events;
+pub mod system_events;
+
+pub use bot_events::BotEvent;
+pub use game_events::GameEvent;
+pub use system_events::SystemEvent;
+
+/// Wrapper enum combining all event categories.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Event {
+    /// Game-related event.
+    Game(GameEvent),
+    /// Bot-specific event.
+    Bot(BotEvent),
+    /// Internal system event.
+    System(SystemEvent),
+}
