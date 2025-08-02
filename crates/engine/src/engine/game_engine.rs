@@ -6,6 +6,10 @@ use crate::{
     simulation::{DeterminismChecker, Replay, ReplayRecorder},
     systems::System,
 };
+use events::{
+    bus::EventBus,
+    events::{Event, GameEvent},
+};
 use state::{GameGrid, grid::GridDelta};
 use tokio::sync::watch;
 
@@ -18,13 +22,16 @@ pub struct Engine {
     systems: Vec<Arc<Mutex<Box<dyn System>>>>,
     replay_recorder: ReplayRecorder,
     determinism_checker: DeterminismChecker,
+    events: Arc<EventBus>,
+    tick: u64,
 }
 
 impl Engine {
     /// Creates a new engine configured via [`EngineConfig`].
-    pub fn new(config: EngineConfig) -> (Self, watch::Receiver<GridDelta>) {
+    pub fn new(config: EngineConfig) -> (Self, watch::Receiver<GridDelta>, Arc<EventBus>) {
         let grid = GameGrid::new(config.width, config.height);
         let (tx, rx) = watch::channel(GridDelta::None);
+        let events = Arc::new(EventBus::new());
         (
             Self {
                 config,
@@ -34,8 +41,11 @@ impl Engine {
                 systems: Vec::new(),
                 replay_recorder: ReplayRecorder::new(),
                 determinism_checker: DeterminismChecker::new(),
+                events: Arc::clone(&events),
+                tick: 0,
             },
             rx,
+            events,
         )
     }
 
@@ -44,6 +54,9 @@ impl Engine {
         self.scheduler.run();
         let grid = self.grid.read().expect("grid lock poisoned");
         self.determinism_checker.record(&grid);
+        self.tick += 1;
+        self.events
+            .broadcast(Event::Game(GameEvent::TickCompleted { tick: self.tick }));
     }
 
     /// Access the shared game grid.
@@ -103,9 +116,10 @@ impl Engine {
         let tx = self.delta_tx.clone();
         let sys_clone = Arc::clone(&sys);
         let recorder = self.replay_recorder.clone();
+        let events = Arc::clone(&self.events);
         self.scheduler.add_task(name, deps, parallel, move || {
             let mut s = sys_clone.lock().expect("system lock poisoned");
-            if let Some(delta) = s.run(&grid) {
+            if let Some(delta) = s.run(&grid, events.as_ref()) {
                 let mut g = grid.write().expect("grid lock poisoned");
                 g.apply_delta(delta.clone());
                 recorder.record(delta.clone());
@@ -133,7 +147,7 @@ mod tests {
             height: 1,
             ..EngineConfig::default()
         };
-        let (mut engine, mut rx) = Engine::new(config);
+        let (mut engine, mut rx, _events) = Engine::new(config);
         engine.add_system(Box::new(MovementSystem::new()));
         assert_eq!(*rx.borrow(), GridDelta::None);
         engine.tick();
@@ -151,7 +165,7 @@ mod tests {
             height: 1,
             ..EngineConfig::default()
         };
-        let (mut engine, _rx) = Engine::new(config);
+        let (mut engine, _rx, _events) = Engine::new(config);
         let flag = Arc::new(AtomicBool::new(false));
         let flag_clone = Arc::clone(&flag);
         engine.add_task("flag", vec![], true, move || {
@@ -170,9 +184,44 @@ mod tests {
             tick_rate: 30,
             ..EngineConfig::default()
         };
-        let (engine, _rx) = Engine::new(cfg.clone());
+        let (engine, _rx, _events) = Engine::new(cfg.clone());
         assert_eq!(engine.config().tick_rate, 30);
         assert_eq!(engine.config().width, 2);
         assert_eq!(engine.config().height, 3);
+    }
+
+    #[test]
+    fn tick_emits_game_event() {
+        use crate::config::EngineConfig;
+        let cfg = EngineConfig {
+            width: 1,
+            height: 1,
+            ..EngineConfig::default()
+        };
+        let (mut engine, _rx, events) = Engine::new(cfg);
+        let (_id, rx_event) = events.subscribe();
+        engine.tick();
+        assert_eq!(
+            rx_event.try_recv().unwrap(),
+            Event::Game(GameEvent::TickCompleted { tick: 1 })
+        );
+    }
+
+    #[test]
+    fn bomb_system_emits_event() {
+        use crate::{config::EngineConfig, systems::BombSystem};
+        let cfg = EngineConfig {
+            width: 1,
+            height: 1,
+            ..EngineConfig::default()
+        };
+        let (mut engine, _rx, events) = Engine::new(cfg);
+        engine.add_system(Box::new(BombSystem::new()));
+        let (_id, rx_event) = events.subscribe();
+        engine.tick();
+        assert!(matches!(
+            rx_event.try_recv().unwrap(),
+            Event::Game(GameEvent::BombPlaced { .. })
+        ));
     }
 }

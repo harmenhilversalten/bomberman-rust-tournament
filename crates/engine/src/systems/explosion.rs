@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 
+use events::bus::EventBus;
 use state::grid::{GameGrid, GridDelta, Tile};
 
 use super::System;
@@ -19,7 +20,7 @@ impl System for ExplosionSystem {
         "explosion"
     }
 
-    fn run(&mut self, _grid: &Arc<RwLock<GameGrid>>) -> Option<GridDelta> {
+    fn run(&mut self, _grid: &Arc<RwLock<GameGrid>>, _events: &EventBus) -> Option<GridDelta> {
         Some(GridDelta::SetTile {
             x: 1,
             y: 0,

@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 
+use events::bus::EventBus;
 use state::grid::{GameGrid, GridDelta, Tile};
 
 use super::System;
@@ -21,7 +22,7 @@ impl System for MovementSystem {
         "movement"
     }
 
-    fn run(&mut self, _grid: &Arc<RwLock<GameGrid>>) -> Option<GridDelta> {
+    fn run(&mut self, _grid: &Arc<RwLock<GameGrid>>, _events: &EventBus) -> Option<GridDelta> {
         let tile = if self.toggle { Tile::Empty } else { Tile::Wall };
         self.toggle = !self.toggle;
         Some(GridDelta::SetTile { x: 0, y: 0, tile })

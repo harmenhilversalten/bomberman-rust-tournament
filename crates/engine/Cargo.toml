@@ -10,3 +10,5 @@ state = { path = "../state" }
 tokio = { workspace = true, features = ["sync"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+events = { path = "../events" }
+bombs = { path = "../bombs" }
