@@ -1,7 +1,9 @@
 //! Bomb component with timing and properties.
 
+use serde::{Deserialize, Serialize};
+
 /// Live bomb placed on the grid.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Bomb {
     /// Identifier of the owner agent.
     pub owner: usize,

@@ -5,10 +5,13 @@
 
 pub mod components;
 pub mod grid;
+/// Serialization utilities for the game state.
+pub mod serialization;
 pub mod state;
 
 pub use components::{AgentState, Bomb};
 pub use grid::{GameGrid, Tile};
+pub use serialization::{Format, SerializationError, decoder, encoder};
 pub use state::{GameState, SnapshotView};
 
 /// Initializes the crate and returns a greeting.
