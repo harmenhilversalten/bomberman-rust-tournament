@@ -17,6 +17,7 @@ resolver = "2"
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }
 crossbeam = "0.8"
+crossbeam-epoch = "0.9"
 criterion = "0.3"
 proptest = "1.0"
 ndarray = "0.15"

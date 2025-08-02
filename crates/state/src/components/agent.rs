@@ -1,7 +1,7 @@
 //! Representation of an agent playing the game.
 
 /// Current state for a single agent.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AgentState {
     /// Unique agent identifier.
     pub id: usize,
