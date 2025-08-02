@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use super::scheduler::TaskScheduler;
+use crate::simulation::{DeterminismChecker, Replay, ReplayRecorder};
 use crate::systems::System;
 use state::{GameGrid, grid::GridDelta};
 use tokio::sync::watch;
@@ -11,6 +12,8 @@ pub struct Engine {
     delta_tx: watch::Sender<GridDelta>,
     scheduler: TaskScheduler,
     systems: Vec<Arc<Mutex<Box<dyn System>>>>,
+    replay_recorder: ReplayRecorder,
+    determinism_checker: DeterminismChecker,
 }
 
 impl Engine {
@@ -24,6 +27,8 @@ impl Engine {
                 delta_tx: tx,
                 scheduler: TaskScheduler::new(),
                 systems: Vec::new(),
+                replay_recorder: ReplayRecorder::new(),
+                determinism_checker: DeterminismChecker::new(),
             },
             rx,
         )
@@ -32,11 +37,38 @@ impl Engine {
     /// Advances the game by a single tick by running all registered systems.
     pub fn tick(&mut self) {
         self.scheduler.run();
+        let grid = self.grid.read().expect("grid lock poisoned");
+        self.determinism_checker.record(&grid);
     }
 
     /// Access the shared game grid.
     pub fn grid(&self) -> Arc<RwLock<GameGrid>> {
         Arc::clone(&self.grid)
+    }
+
+    /// Start recording a replay.
+    pub fn start_replay_recording(&mut self) {
+        self.replay_recorder.start();
+        self.determinism_checker = DeterminismChecker::new();
+    }
+
+    /// Stop recording and return the replay.
+    pub fn stop_replay_recording(&mut self) -> Replay {
+        self.replay_recorder.stop()
+    }
+
+    /// Access determinism hashes collected each tick.
+    pub fn determinism_hashes(&self) -> &[u64] {
+        self.determinism_checker.hashes()
+    }
+
+    /// Apply a replay to the current grid recording hashes.
+    pub fn load_replay(&mut self, replay: &Replay) {
+        let mut grid = self.grid.write().expect("grid lock poisoned");
+        for delta in replay.deltas() {
+            grid.apply_delta(delta.clone());
+            self.determinism_checker.record(&grid);
+        }
     }
 
     /// Add a task to the internal scheduler.
@@ -60,11 +92,13 @@ impl Engine {
         let grid = Arc::clone(&self.grid);
         let tx = self.delta_tx.clone();
         let sys_clone = Arc::clone(&sys);
+        let recorder = self.replay_recorder.clone();
         self.scheduler.add_task(name, deps, parallel, move || {
             let mut s = sys_clone.lock().expect("system lock poisoned");
             if let Some(delta) = s.run(&grid) {
                 let mut g = grid.write().expect("grid lock poisoned");
                 g.apply_delta(delta.clone());
+                recorder.record(delta.clone());
                 let _ = tx.send(delta);
             }
         });
