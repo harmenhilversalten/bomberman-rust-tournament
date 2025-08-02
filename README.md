@@ -9,6 +9,8 @@ The project is organized as a Cargo workspace. The main engine crate lives in `c
 That crate exposes an `Engine` struct managing the shared `GameGrid` and broadcasting `GridDelta` events each tick.
 Baseline AI implementations reside in `crates/bot` and include heuristic,
 reactive and planning strategies that can be switched at runtime.
+Reinforcement learning utilities live in `crates/rl` and provide policy and
+value estimation built on top of the `tch` crate for PyTorch interoperability.
 
 Build and launch a tournament with the default settings:
 
