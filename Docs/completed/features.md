@@ -23,3 +23,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Workspace restructure with skeleton crates ([Backlog #1](../backlog/backlog.md#1-restructure-into-workspace)).
 - Core state crate structures ([Backlog #2](../backlog/backlog.md#2-state-crate-%E2%80%93-core-structures)).
 - Snapshot layer with immutable views ([Backlog #3](../backlog/backlog.md#3-state-crate-%E2%80%93-snapshot-layer)).
+- State serialization supporting binary and JSON formats ([Backlog #4](../backlog/backlog.md#4-state-crate-%E2%80%93-serialization)).

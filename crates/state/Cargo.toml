@@ -7,3 +7,6 @@ edition = "2024"
 crossbeam-epoch = { workspace = true }
 triomphe = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = { workspace = true }

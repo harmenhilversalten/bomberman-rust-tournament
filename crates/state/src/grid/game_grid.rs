@@ -51,6 +51,59 @@ impl GameGrid {
         }
     }
 
+    /// Constructs a grid from raw parts used during deserialization.
+    pub(crate) fn from_parts(
+        width: usize,
+        height: usize,
+        tiles: Vec<Tile>,
+        bombs: Vec<Bomb>,
+        agents: Vec<AgentState>,
+        version: u64,
+    ) -> Self {
+        let (tx, _rx) = watch::channel(GridDelta::None);
+        let inner = SnapshotInner::new(
+            Arc::<[Tile]>::from(tiles.clone()),
+            Arc::<[Bomb]>::from(bombs.clone()),
+            Arc::<[AgentState]>::from(agents.clone()),
+            version,
+        );
+        Self {
+            width,
+            height,
+            tiles,
+            bombs,
+            agents,
+            version: AtomicU64::new(version),
+            snapshot: Atomic::new(inner),
+            delta_tx: tx,
+        }
+    }
+
+    /// Width of the grid.
+    pub(crate) fn width(&self) -> usize {
+        self.width
+    }
+
+    /// Height of the grid.
+    pub(crate) fn height(&self) -> usize {
+        self.height
+    }
+
+    /// All tiles in the grid.
+    pub(crate) fn tiles(&self) -> &[Tile] {
+        &self.tiles
+    }
+
+    /// All bombs currently in the grid.
+    pub(crate) fn bombs(&self) -> &[Bomb] {
+        &self.bombs
+    }
+
+    /// All agents currently in the grid.
+    pub(crate) fn agents(&self) -> &[AgentState] {
+        &self.agents
+    }
+
     fn index(&self, x: usize, y: usize) -> usize {
         y * self.width + x
     }

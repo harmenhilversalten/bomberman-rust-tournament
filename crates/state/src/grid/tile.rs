@@ -1,7 +1,9 @@
 //! Tile representation for the game grid.
 
+use serde::{Deserialize, Serialize};
+
 /// Different types of grid tiles.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Tile {
     /// Empty walkable tile
     Empty,
