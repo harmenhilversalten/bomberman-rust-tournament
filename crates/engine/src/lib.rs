@@ -8,4 +8,4 @@ pub mod game;
 pub mod map;
 pub mod shrink;
 
-pub use engine::Engine;
+pub use engine::{Engine, TaskScheduler};

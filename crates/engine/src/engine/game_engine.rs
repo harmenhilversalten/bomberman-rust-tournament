@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 
+use super::scheduler::TaskScheduler;
 use state::{GameGrid, Tile, grid::GridDelta};
 use tokio::sync::watch;
 
@@ -8,6 +9,7 @@ pub struct Engine {
     grid: Arc<RwLock<GameGrid>>,
     delta_tx: watch::Sender<GridDelta>,
     toggle: bool,
+    scheduler: TaskScheduler,
 }
 
 impl Engine {
@@ -20,6 +22,7 @@ impl Engine {
                 grid: Arc::new(RwLock::new(grid)),
                 delta_tx: tx,
                 toggle: false,
+                scheduler: TaskScheduler::new(),
             },
             rx,
         )
@@ -39,17 +42,30 @@ impl Engine {
             delta
         };
         let _ = self.delta_tx.send(delta);
+        self.scheduler.run();
     }
 
     /// Access the shared game grid.
     pub fn grid(&self) -> Arc<RwLock<GameGrid>> {
         Arc::clone(&self.grid)
     }
+
+    /// Add a task to the internal scheduler.
+    pub fn add_task<F>(&mut self, name: &str, deps: Vec<String>, parallel: bool, task: F)
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        self.scheduler.add_task(name, deps, parallel, task);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+    };
 
     #[test]
     fn tick_broadcasts_delta() {
@@ -64,5 +80,17 @@ mod tests {
                 tile: Tile::Wall
             }
         );
+    }
+
+    #[test]
+    fn tick_runs_scheduler_tasks() {
+        let (mut engine, _rx) = Engine::new(1);
+        let flag = Arc::new(AtomicBool::new(false));
+        let flag_clone = Arc::clone(&flag);
+        engine.add_task("flag", vec![], true, move || {
+            flag_clone.store(true, Ordering::SeqCst);
+        });
+        engine.tick();
+        assert!(flag.load(Ordering::SeqCst));
     }
 }
