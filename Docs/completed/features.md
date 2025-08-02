@@ -32,3 +32,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Event types and bus with subscriber registration ([Backlog #10](../backlog/backlog.md#10-events-crate-%E2%80%93-event-types-and-bus)).
 - Event queue with priority levels and subscription filters ([Backlog #11](../backlog/backlog.md#11-events-crate-%E2%80%93-queue-and-filtering)).
 - Event serialization and RL transition recording ([Backlog #12](../backlog/backlog.md#12-events-crate-%E2%80%93-serialization-and-recording)).
+- Influence map core with danger and opportunity layers ([Backlog #13](../backlog/backlog.md#13-influence-map-crate-%E2%80%93-core-map)).

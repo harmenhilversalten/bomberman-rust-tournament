@@ -1,17 +1,10 @@
-//! Temporary skeleton crate
+//! Influence map crate providing danger and opportunity layers.
 #![forbid(unsafe_code)]
 #![warn(missing_docs, clippy::all)]
-/// Initializes the crate and returns a greeting.
-pub fn init() -> &'static str {
-    "initialized"
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Core influence map functionality.
+pub mod core;
 
-    #[test]
-    fn init_returns_initialized() {
-        assert_eq!(init(), "initialized");
-    }
-}
+pub use core::{
+    DangerSource, DirtyRegion, InfluenceError, InfluenceMap, InfluenceType, OpportunitySource,
+};
