@@ -6,6 +6,8 @@
 pub mod core;
 /// Update strategies and dirty region tracking.
 pub mod update;
+/// Visualization and export helpers.
+pub mod visualization;
 
 pub use core::{
     DangerSource, DirtyRegion, InfluenceError, InfluenceMap, InfluenceType, OpportunitySource,
