@@ -4,7 +4,10 @@
 
 /// Core influence map functionality.
 pub mod core;
+/// Update strategies and dirty region tracking.
+pub mod update;
 
 pub use core::{
     DangerSource, DirtyRegion, InfluenceError, InfluenceMap, InfluenceType, OpportunitySource,
 };
+pub use update::{FullUpdate, IncrementalUpdate, UpdateStrategy};

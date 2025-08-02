@@ -6,3 +6,6 @@ edition = "2024"
 [dependencies]
 state = { path = "../state" }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
