@@ -3,6 +3,8 @@
 #![warn(missing_docs, clippy::all)]
 
 pub mod bomb;
+pub mod placement;
+pub mod timing;
 
 pub use bomb::{
     BombError, BombManager,
@@ -10,3 +12,6 @@ pub use bomb::{
     entity::{Bomb, BombId, Position},
     explosion::Explosion,
 };
+
+pub use placement::{PlacementStrategy, SafePlacer, StrategicPlacer};
+pub use timing::{BombTimer, RemoteDetonator};
