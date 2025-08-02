@@ -38,3 +38,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Pathfinding algorithms A*, D* Lite and Jump Point Search ([Backlog #16](../backlog/backlog.md#16-path-crate-%E2%80%93-algorithm-implementations)).
 - Path grid and heuristic modules with Manhattan and Euclidean functions ([Backlog #17](../backlog/backlog.md#17-path-crate-%E2%80%93-grid-and-heuristics)).
 - Path cache with eviction policies and path optimization algorithms ([Backlog #18](../backlog/backlog.md#18-path-crate-%E2%80%93-caching-and-optimization)).
+- Bomb logic with chain reactions and explosion calculation ([Backlog #19](../backlog/backlog.md#19-bombs-crate-%E2%80%93-bomb-logic)).

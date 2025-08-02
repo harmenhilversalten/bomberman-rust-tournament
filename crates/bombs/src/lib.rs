@@ -1,17 +1,12 @@
-//! Temporary skeleton crate
+//! Bomb logic crate providing chain reaction and explosion calculations.
 #![forbid(unsafe_code)]
 #![warn(missing_docs, clippy::all)]
-/// Initializes the crate and returns a greeting.
-pub fn init() -> &'static str {
-    "initialized"
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub mod bomb;
 
-    #[test]
-    fn init_returns_initialized() {
-        assert_eq!(init(), "initialized");
-    }
-}
+pub use bomb::{
+    BombError, BombManager,
+    chain::{BombChain, BombChainId},
+    entity::{Bomb, BombId, Position},
+    explosion::Explosion,
+};
