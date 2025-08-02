@@ -1,15 +1,16 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
 use super::scheduler::TaskScheduler;
-use state::{GameGrid, Tile, grid::GridDelta};
+use crate::systems::System;
+use state::{GameGrid, grid::GridDelta};
 use tokio::sync::watch;
 
 /// Core game engine advancing the simulation and broadcasting changes.
 pub struct Engine {
     grid: Arc<RwLock<GameGrid>>,
     delta_tx: watch::Sender<GridDelta>,
-    toggle: bool,
     scheduler: TaskScheduler,
+    systems: Vec<Arc<Mutex<Box<dyn System>>>>,
 }
 
 impl Engine {
@@ -21,27 +22,15 @@ impl Engine {
             Self {
                 grid: Arc::new(RwLock::new(grid)),
                 delta_tx: tx,
-                toggle: false,
                 scheduler: TaskScheduler::new(),
+                systems: Vec::new(),
             },
             rx,
         )
     }
 
-    /// Advances the game by a single tick.
-    ///
-    /// This demo implementation simply toggles the tile at (0,0) between
-    /// `Tile::Empty` and `Tile::Wall` and broadcasts the resulting delta.
+    /// Advances the game by a single tick by running all registered systems.
     pub fn tick(&mut self) {
-        let delta = {
-            let mut grid = self.grid.write().expect("grid lock poisoned");
-            let tile = if self.toggle { Tile::Empty } else { Tile::Wall };
-            self.toggle = !self.toggle;
-            let delta = GridDelta::SetTile { x: 0, y: 0, tile };
-            grid.apply_delta(delta.clone());
-            delta
-        };
-        let _ = self.delta_tx.send(delta);
         self.scheduler.run();
     }
 
@@ -57,6 +46,30 @@ impl Engine {
     {
         self.scheduler.add_task(name, deps, parallel, task);
     }
+
+    /// Register a new system with the engine.
+    pub fn add_system(&mut self, system: Box<dyn System>) {
+        let deps = system
+            .dependencies()
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+        let parallel = system.parallelizable();
+        let name = system.name().to_string();
+        let sys = Arc::new(Mutex::new(system));
+        let grid = Arc::clone(&self.grid);
+        let tx = self.delta_tx.clone();
+        let sys_clone = Arc::clone(&sys);
+        self.scheduler.add_task(name, deps, parallel, move || {
+            let mut s = sys_clone.lock().expect("system lock poisoned");
+            if let Some(delta) = s.run(&grid) {
+                let mut g = grid.write().expect("grid lock poisoned");
+                g.apply_delta(delta.clone());
+                let _ = tx.send(delta);
+            }
+        });
+        self.systems.push(sys);
+    }
 }
 
 #[cfg(test)]
@@ -68,18 +81,17 @@ mod tests {
     };
 
     #[test]
-    fn tick_broadcasts_delta() {
+    fn tick_broadcasts_system_delta() {
+        use crate::systems::MovementSystem;
+
         let (mut engine, mut rx) = Engine::new(1);
+        engine.add_system(Box::new(MovementSystem::new()));
         assert_eq!(*rx.borrow(), GridDelta::None);
         engine.tick();
-        assert_eq!(
+        assert!(matches!(
             rx.borrow_and_update().clone(),
-            GridDelta::SetTile {
-                x: 0,
-                y: 0,
-                tile: Tile::Wall
-            }
-        );
+            GridDelta::SetTile { x: 0, y: 0, .. }
+        ));
     }
 
     #[test]

@@ -26,3 +26,4 @@ As new backlog features are completed, list them below with a reference to the b
 - State serialization supporting binary and JSON formats ([Backlog #4](../backlog/backlog.md#4-state-crate-%E2%80%93-serialization)).
 - Engine core loop with delta broadcasting ([Backlog #5](../backlog/backlog.md#5-engine-crate-%E2%80%93-core-loop)).
 - Engine scheduler supporting parallel task execution ([Backlog #6](../backlog/backlog.md#6-engine-crate-%E2%80%93-scheduler)).
+- Engine systems for movement, bombs, explosions, powerups and players ([Backlog #7](../backlog/backlog.md#7-engine-crate-%E2%80%93-system-modules)).
