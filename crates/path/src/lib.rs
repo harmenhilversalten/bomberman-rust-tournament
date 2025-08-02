@@ -50,9 +50,13 @@ pub trait Grid {
 }
 
 pub mod algorithms;
+pub mod cache;
 pub mod grid;
 pub mod heuristic;
+pub mod optimization;
 
 pub use algorithms::{AStar, DStarLite, JumpPointSearch, Pathfinder};
+pub use cache::{CacheKey, EvictionPolicy, PathCache};
 pub use grid::PathGrid;
 pub use heuristic::{Euclidean, Heuristic, Manhattan};
+pub use optimization::{simplify_path, smooth_path};
