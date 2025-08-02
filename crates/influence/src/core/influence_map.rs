@@ -9,6 +9,7 @@ use super::{
     layer::InfluenceLayer,
     opportunity::{OpportunityMap, OpportunitySource},
 };
+use crate::update::{DirtyTracker, IncrementalUpdate, UpdateStrategy};
 
 /// Types of influence layers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -45,7 +46,8 @@ pub struct InfluenceMap {
     width: u16,
     height: u16,
     layers: HashMap<InfluenceType, Box<dyn InfluenceLayer>>,
-    dirty_regions: Vec<DirtyRegion>,
+    dirty: DirtyTracker,
+    strategy: Box<dyn UpdateStrategy>,
 }
 
 impl InfluenceMap {
@@ -65,13 +67,26 @@ impl InfluenceMap {
             width,
             height,
             layers,
-            dirty_regions: Vec::new(),
+            dirty: DirtyTracker::new(),
+            strategy: Box::new(IncrementalUpdate::new()),
         }
+    }
+
+    /// Creates a new map with a custom update strategy.
+    pub fn with_strategy(width: u16, height: u16, strategy: Box<dyn UpdateStrategy>) -> Self {
+        let mut map = Self::new(width, height);
+        map.strategy = strategy;
+        map
+    }
+
+    /// Sets the update strategy at runtime.
+    pub fn set_update_strategy(&mut self, strategy: Box<dyn UpdateStrategy>) {
+        self.strategy = strategy;
     }
 
     /// Marks a region of the map as dirty for the next update.
     pub fn mark_dirty(&mut self, region: DirtyRegion) {
-        self.dirty_regions.push(region);
+        self.dirty.mark(region);
     }
 
     /// Returns the map width.
@@ -91,6 +106,13 @@ impl InfluenceMap {
                 danger.add_source(source);
             }
         }
+        self.mark_dirty(region_from_source(
+            source.x,
+            source.y,
+            source.range,
+            self.width,
+            self.height,
+        ));
     }
 
     /// Adds an opportunity source to the underlying opportunity layer.
@@ -100,14 +122,24 @@ impl InfluenceMap {
                 opportunity.add_source(source);
             }
         }
+        self.mark_dirty(region_from_source(
+            source.x,
+            source.y,
+            source.range,
+            self.width,
+            self.height,
+        ));
     }
 
     /// Recomputes layers using the provided state and current dirty regions.
     pub fn update(&mut self, state: &GameState) -> Result<(), InfluenceError> {
+        self.strategy
+            .update(&mut self.dirty, self.width, self.height);
+        let regions: Vec<DirtyRegion> = self.dirty.regions().to_vec();
         for layer in self.layers.values_mut() {
-            layer.update(state, &self.dirty_regions);
+            layer.update(state, &regions);
         }
-        self.dirty_regions.clear();
+        self.dirty.clear();
         Ok(())
     }
 
@@ -129,6 +161,19 @@ impl InfluenceMap {
     }
 }
 
+fn region_from_source(x: u16, y: u16, range: u16, width: u16, height: u16) -> DirtyRegion {
+    let start_x = x.saturating_sub(range);
+    let start_y = y.saturating_sub(range);
+    let end_x = (u32::from(x) + u32::from(range)).min(u32::from(width - 1));
+    let end_y = (u32::from(y) + u32::from(range)).min(u32::from(height - 1));
+    DirtyRegion {
+        x: start_x,
+        y: start_y,
+        width: (end_x - u32::from(start_x) + 1) as u16,
+        height: (end_y - u32::from(start_y) + 1) as u16,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -145,12 +190,6 @@ mod tests {
             strength: 1.0,
             range: 2,
         });
-        map.mark_dirty(DirtyRegion {
-            x: 0,
-            y: 0,
-            width: 5,
-            height: 5,
-        });
         map.update(&GameState::new(5, 5)).unwrap();
         assert!((map.danger_at(2, 2).unwrap() - 1.0).abs() < f32::EPSILON);
         assert!((map.danger_at(3, 2).unwrap() - 0.5).abs() < f32::EPSILON);
@@ -166,12 +205,6 @@ mod tests {
             y: 0,
             value: 2.0,
             range: 3,
-        });
-        map.mark_dirty(DirtyRegion {
-            x: 0,
-            y: 0,
-            width: 5,
-            height: 5,
         });
         map.update(&GameState::new(5, 5)).unwrap();
         assert!((map.opportunity_at(0, 0).unwrap() - 2.0).abs() < f32::EPSILON);
