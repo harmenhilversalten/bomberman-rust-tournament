@@ -99,6 +99,7 @@ name = "bombs"
 version = "0.1.0"
 dependencies = [
  "petgraph",
+ "proptest",
  "serde",
  "thiserror",
 ]

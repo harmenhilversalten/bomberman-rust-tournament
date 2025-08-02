@@ -7,3 +7,6 @@ edition = "2024"
 petgraph = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+proptest = { workspace = true }
