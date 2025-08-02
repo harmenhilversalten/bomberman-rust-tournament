@@ -6,6 +6,7 @@ pub mod chain;
 pub mod entity;
 pub mod explosion;
 
+use crate::timing::{BombTimer, RemoteDetonator};
 use chain::{BombChain, find_bomb_chains};
 use entity::{Bomb, BombId};
 use explosion::Explosion;
@@ -18,12 +19,17 @@ pub enum BombError {
     /// Requested bomb was not found.
     #[error("bomb {0:?} not found")]
     MissingBomb(BombId),
+    /// The bomb is not configured for remote detonation.
+    #[error("bomb {0:?} is not remote-capable")]
+    NotRemote(BombId),
 }
 
 /// Manages active bombs and their interactions.
 #[derive(Default)]
 pub struct BombManager {
     bombs: HashMap<BombId, Bomb>,
+    timers: HashMap<BombId, BombTimer>,
+    remote: RemoteDetonator,
 }
 
 impl BombManager {
@@ -31,12 +37,41 @@ impl BombManager {
     pub fn new() -> Self {
         Self {
             bombs: HashMap::new(),
+            timers: HashMap::new(),
+            remote: RemoteDetonator::default(),
         }
     }
 
     /// Inserts a bomb into the manager.
     pub fn add_bomb(&mut self, bomb: Bomb) {
+        if bomb.remote {
+            self.remote.arm(bomb.id);
+        }
+        self.timers.insert(bomb.id, BombTimer::new(bomb.timer));
         self.bombs.insert(bomb.id, bomb);
+    }
+
+    /// Advances all bomb timers by one tick and returns bombs ready to explode.
+    pub fn tick(&mut self) -> Vec<BombId> {
+        let mut ready = Vec::new();
+        for (&id, timer) in self.timers.iter_mut() {
+            if timer.tick() {
+                ready.push(id);
+            }
+        }
+        ready
+    }
+
+    /// Detonates a remote-capable bomb immediately.
+    pub fn detonate_remote(&mut self, id: BombId) -> Result<(), BombError> {
+        if self.remote.detonate(id) {
+            if let Some(timer) = self.timers.get_mut(&id) {
+                *timer = BombTimer::new(0);
+            }
+            Ok(())
+        } else {
+            Err(BombError::NotRemote(id))
+        }
     }
 
     /// Returns the current bomb chains based on spatial relationships.
@@ -75,5 +110,25 @@ mod tests {
             .calculate_explosion(b1.id, (5, 5), &HashSet::new())
             .unwrap();
         assert!(explosion.affected_cells.contains(&b2.position));
+    }
+
+    #[test]
+    fn ticking_triggers_bomb() {
+        let mut mgr = BombManager::new();
+        let bomb = Bomb::new(BombId(3), 0, (0, 0), 1, 1);
+        mgr.add_bomb(bomb);
+        let ready = mgr.tick();
+        assert_eq!(ready, vec![BombId(3)]);
+    }
+
+    #[test]
+    fn remote_detonation_marks_bomb_ready() {
+        let mut mgr = BombManager::new();
+        let mut bomb = Bomb::new(BombId(4), 0, (0, 0), 5, 1);
+        bomb.remote = true;
+        mgr.add_bomb(bomb);
+        assert!(mgr.detonate_remote(BombId(4)).is_ok());
+        let ready = mgr.tick();
+        assert_eq!(ready, vec![BombId(4)]);
     }
 }
