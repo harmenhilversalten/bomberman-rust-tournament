@@ -1,35 +1,92 @@
-// this file contains a basic bot that can play the game.
-// it should be modified by the user to create their own sophisticated bot.
+use std::sync::{
+    Arc,
+    atomic::{AtomicUsize, Ordering},
+};
 
-// a bot consist of returning a desired name, and a callback that provides player actions based
-// onthe current map and the players positions.
-// the player shoudl self determine how far the game has progressed, including bomb times.
+use events::{bus::EventBus, events::BotDecision};
+use tokio::task::JoinHandle;
 
-// for every game a bot is constructed. So the lifetime of the bot is the same as the game.
+use bot::{
+    AiType, Bot as KernelBot, BotConfig, BotState, DecisionMaker, HeuristicAI, PlanningAI,
+    ReactiveAI,
+};
+use state::grid::GridDelta;
 
-pub mod easy_bot;
-pub mod random_bot;
+use events::events::bot_events::BotId;
 
-use crate::coord::Coord;
-use crate::game::map_settings::MapSettings;
-use crate::map::{Command, Map};
-
-pub trait Bot {
-    fn name(&self) -> String;
-
-    fn start_game(&mut self, map_settings: &MapSettings, bot_id: usize) -> bool;
-
-    fn get_move(&mut self, map: &Map, player_location: Coord) -> Command;
+/// Errors related to bot management.
+#[derive(Debug, thiserror::Error)]
+pub enum BotError {
+    /// Invalid configuration provided.
+    #[error("invalid bot configuration: {0}")]
+    InvalidConfig(String),
+    /// Bot with the given id was not found.
+    #[error("bot not found")]
+    NotFound,
 }
 
-pub type BotConstructor = fn(&str) -> Box<dyn Bot>;
+/// Handle to a running bot task.
+pub struct BotHandle {
+    /// Identifier of the bot.
+    pub id: BotId,
+    join: JoinHandle<BotState>,
+}
 
-pub fn available_bots() -> Vec<BotConstructor> {
-    vec![
-        |name| Box::new(random_bot::RandomBot::new(name.to_string())),
-        |name| Box::new(easy_bot::EasyBot::new(name.to_string())),
-        // Voeg hier nieuwe bots toe!
-    ]
+impl BotHandle {
+    /// Abort the running bot task.
+    pub fn abort(&self) {
+        self.join.abort();
+    }
+}
+
+/// Manager responsible for spawning and tracking bots.
+pub struct BotManager {
+    runtime: tokio::runtime::Runtime,
+    next_id: AtomicUsize,
+}
+
+impl BotManager {
+    /// Create a new [`BotManager`].
+    pub fn new() -> Self {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("runtime");
+        Self {
+            runtime,
+            next_id: AtomicUsize::new(0),
+        }
+    }
+
+    fn build_ai(&self, ai: AiType) -> Box<dyn DecisionMaker<GridDelta, BotDecision>> {
+        match ai {
+            AiType::Heuristic => Box::new(HeuristicAI),
+            AiType::Reactive => Box::new(ReactiveAI),
+            AiType::Planning => Box::new(PlanningAI),
+        }
+    }
+
+    /// Spawn a bot using the provided configuration.
+    pub fn spawn_bot(
+        &self,
+        mut config: BotConfig,
+        bus: Arc<EventBus>,
+    ) -> Result<BotHandle, BotError> {
+        config
+            .validate()
+            .map_err(|e| BotError::InvalidConfig(e.to_string()))?;
+        let id = self.next_id.fetch_add(1, Ordering::Relaxed);
+        config.id = id;
+        let ai = self.build_ai(config.ai_type);
+        let bot = KernelBot::new(config, bus, ai);
+        let join = self.run_bot_decision_loop(bot);
+        Ok(BotHandle { id, join })
+    }
+
+    /// Run the decision loop for a bot asynchronously.
+    pub fn run_bot_decision_loop(&self, bot: KernelBot) -> JoinHandle<BotState> {
+        self.runtime.spawn(async move { bot.run() })
+    }
 }
 
 #[cfg(test)]
@@ -37,8 +94,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn all_bots_are_registered() {
-        // Verwacht bijvoorbeeld 2 bots:
-        assert_eq!(available_bots().len(), 2);
+    fn spawns_bot_and_returns_handle() {
+        let manager = BotManager::new();
+        let bus = Arc::new(EventBus::new());
+        let cfg = BotConfig::new("b", AiType::Heuristic);
+        let handle = manager.spawn_bot(cfg, bus).expect("spawn");
+        assert_eq!(handle.id, 0);
+        handle.abort();
     }
 }

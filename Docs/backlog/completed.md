@@ -234,3 +234,12 @@ This archive lists backlog items that have been completed and moved out of the a
   - Feed snapshots, goals, pathfinding, and bomb planning through the newly implemented crates, removing parallel legacy code.
   - Ensure the integration honors the data-flow design where the engine updates shared state and downstream components react via deltas and events.
 - **Prompt**: "Wire up all feature crates in the engine and retire overlapping legacy modules."
+
+## 30. Connect Bot Decision Loop to Engine
+- **Summary**: Wire the bot decision loop into the engine so bots receive game-state snapshots via the event bus, make decisions asynchronously, and have their actions executed in the correct tick.
+- **Requirements**:
+  - Bot instances receive game state updates from the engine
+  - Bot decisions are executed by the engine each tick
+  - Per-bot decision tasks run asynchronously
+  - Bot actions are processed in the correct game tick
+- **Prompt**: "Connect the bot decision loop to the engine. Implement bot spawning in the engine, ensure bots receive state updates via the event bus, and process bot commands in the game loop. Add async bot task management."

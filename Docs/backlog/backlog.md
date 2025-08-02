@@ -29,28 +29,6 @@ Completed backlog items 1-29 are archived in [completed.md](completed.md).
 
 ---
 
-## BPI-002: Connect Bot Decision Loop to Engine
-* **Summary**: Wire the bot decision loop into the engine so bots receive game-state snapshots via the event bus, make decisions asynchronously, and have their actions executed in the correct tick.
-* **Requirements**
-  * Bot instances must receive game state updates from the engine
-  * Bot decisions must be executed by the engine
-  * Per-bot decision tasks must run asynchronously
-  * Bot actions must be processed in the correct game tick
-* **Files that need changing**
-  * `crates/engine/src/engine/game_engine.rs` – Add bot management
-  * `crates/engine/src/lib.rs` – Export bot management functions
-  * `crates/bot/src/bot/kernel.rs` – Connect to engine events
-  * `crates/engine/src/main.rs` – Initialize and run bots
-  * `crates/engine/src/bot/mod.rs` – Add bot spawning logic
-* **What needs to change**
-  * Engine must spawn and manage bot instances
-  * Bot kernel must receive snapshots via event bus instead of direct channel
-  * Engine must process bot commands and apply them to game state
-  * Main application must initialize bots with proper configuration
-* **Prompt**: “Connect the bot decision loop to the engine. Implement bot spawning in the engine, ensure bots receive state updates via the event bus, and process bot commands in the game loop. Add async bot task management.”
-
----
-
 ## BPI-003: Integrate AI Components (Goals, Path, Influence) with Bot Kernel
 * **Summary**: Plug the goals, path-finding, and influence-map crates into the bot kernel for cohesive, goal-driven decision making.
 * **Requirements**

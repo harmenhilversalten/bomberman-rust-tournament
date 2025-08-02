@@ -2,16 +2,20 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use super::scheduler::TaskScheduler;
 use crate::{
+    bot::{BotError, BotHandle, BotManager},
     config::EngineConfig,
     simulation::{DeterminismChecker, Replay, ReplayRecorder},
     systems::System,
 };
+use ::bot::BotConfig;
 use crossbeam::channel::Receiver;
 use events::{
     bus::{EventBus, EventFilter},
-    events::{BotEvent, Event, GameEvent},
+    events::bot_events::BotId,
+    events::{BotDecision, BotEvent, Event, GameEvent},
+    queue::EventPriority,
 };
-use state::{GameGrid, grid::GridDelta};
+use state::{GameGrid, components::Bomb, grid::GridDelta};
 use tokio::sync::watch;
 
 /// Core game engine advancing the simulation and broadcasting changes.
@@ -24,8 +28,9 @@ pub struct Engine {
     replay_recorder: ReplayRecorder,
     determinism_checker: DeterminismChecker,
     events: Arc<EventBus>,
-    command_rx: Receiver<Event>,
-    last_command: Option<BotEvent>,
+    bot_manager: BotManager,
+    bots: Vec<BotHandle>,
+    bot_command_rx: Receiver<Event>,
     tick: u64,
 }
 
@@ -37,6 +42,7 @@ impl Engine {
         let events = Arc::new(EventBus::new());
         let filter = EventFilter::new(|e| matches!(e, Event::Bot(_)));
         let (_id, cmd_rx) = events.subscribe_with_filter(Some(filter));
+        let bot_manager = BotManager::new();
         (
             Self {
                 config,
@@ -47,8 +53,9 @@ impl Engine {
                 replay_recorder: ReplayRecorder::new(),
                 determinism_checker: DeterminismChecker::new(),
                 events: Arc::clone(&events),
-                command_rx: cmd_rx,
-                last_command: None,
+                bot_manager,
+                bots: Vec::new(),
+                bot_command_rx: cmd_rx,
                 tick: 0,
             },
             rx,
@@ -59,14 +66,68 @@ impl Engine {
     /// Advances the game by a single tick by running all registered systems.
     pub fn tick(&mut self) {
         self.scheduler.run();
-        while let Ok(Event::Bot(cmd)) = self.command_rx.try_recv() {
-            self.last_command = Some(cmd);
+        self.events.process();
+        while let Ok(Event::Bot(cmd)) = self.bot_command_rx.try_recv() {
+            let bot_id = match &cmd {
+                BotEvent::Decision { bot_id, .. } | BotEvent::Error { bot_id, .. } => *bot_id,
+            };
+            if let Err(e) = self.handle_bot_command(cmd) {
+                self.events.emit(
+                    Event::Bot(BotEvent::Error {
+                        bot_id,
+                        message: e.to_string(),
+                    }),
+                    EventPriority::Normal,
+                );
+            }
         }
         let grid = self.grid.read().expect("grid lock poisoned");
         self.determinism_checker.record(&grid);
         self.tick += 1;
         self.events
             .broadcast(Event::Game(GameEvent::TickCompleted { tick: self.tick }));
+    }
+
+    fn handle_bot_command(&mut self, cmd: BotEvent) -> Result<(), BotError> {
+        match cmd {
+            BotEvent::Decision { bot_id, decision } => match decision {
+                BotDecision::Wait => Ok(()),
+                BotDecision::PlaceBomb => {
+                    let bomb = Bomb::new(bot_id, (0, 0), 3, 1);
+                    let delta = GridDelta::AddBomb(bomb);
+                    {
+                        let mut grid = self.grid.write().expect("grid lock poisoned");
+                        grid.apply_delta(delta.clone());
+                    }
+                    self.replay_recorder.record(delta.clone());
+                    let _ = self.delta_tx.send(delta.clone());
+                    self.events.broadcast(Event::Grid(delta));
+                    Ok(())
+                }
+            },
+            BotEvent::Error { .. } => Ok(()),
+        }
+    }
+
+    /// Spawn a bot managed by the engine.
+    pub fn spawn_bot(&mut self, config: BotConfig) -> Result<BotId, BotError> {
+        let handle = self
+            .bot_manager
+            .spawn_bot(config, Arc::clone(&self.events))?;
+        let id = handle.id;
+        self.bots.push(handle);
+        Ok(id)
+    }
+
+    /// Remove a bot from the engine.
+    pub fn remove_bot(&mut self, bot_id: BotId) -> Result<(), BotError> {
+        if let Some(pos) = self.bots.iter().position(|b| b.id == bot_id) {
+            let handle = self.bots.remove(pos);
+            handle.abort();
+            Ok(())
+        } else {
+            Err(BotError::NotFound)
+        }
     }
 
     /// Access the shared game grid.
@@ -144,11 +205,11 @@ impl Engine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use events::{events::BotDecision, queue::EventPriority};
     use std::sync::{
         Arc,
         atomic::{AtomicBool, Ordering},
     };
-    use events::events::BotDecision;
 
     #[test]
     fn tick_broadcasts_system_delta() {
@@ -244,15 +305,18 @@ mod tests {
             height: 1,
             ..EngineConfig::default()
         };
-        let (mut engine, _rx, events) = Engine::new(cfg);
-        events.broadcast(Event::Bot(BotEvent::Decision {
-            bot_id: 1,
-            decision: BotDecision::Wait,
-        }));
+        let (mut engine, mut rx, events) = Engine::new(cfg);
+        events.emit(
+            Event::Bot(BotEvent::Decision {
+                bot_id: 1,
+                decision: BotDecision::PlaceBomb,
+            }),
+            EventPriority::Normal,
+        );
         engine.tick();
         assert!(matches!(
-            engine.last_command,
-            Some(BotEvent::Decision { .. })
+            rx.borrow_and_update().clone(),
+            GridDelta::AddBomb(_)
         ));
     }
 
