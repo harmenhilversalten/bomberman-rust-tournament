@@ -28,3 +28,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Engine scheduler supporting parallel task execution ([Backlog #6](../backlog/backlog.md#6-engine-crate-%E2%80%93-scheduler)).
 - Engine systems for movement, bombs, explosions, powerups and players ([Backlog #7](../backlog/backlog.md#7-engine-crate-%E2%80%93-system-modules)).
 - Replay recording and determinism checks ([Backlog #8](../backlog/backlog.md#8-engine-crate-%E2%80%93-replay-and-determinism)).
+- Engine configuration and game rules ([Backlog #9](../backlog/backlog.md#9-engine-crate-%E2%80%93-configuration)).

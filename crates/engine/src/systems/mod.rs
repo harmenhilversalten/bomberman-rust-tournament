@@ -35,12 +35,17 @@ pub use powerup::PowerupSystem;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::engine::Engine;
+    use crate::{config::EngineConfig, engine::Engine};
     use state::grid::Tile;
 
     #[test]
     fn systems_interact_on_grid() {
-        let (mut engine, _rx) = Engine::new(2);
+        let cfg = EngineConfig {
+            width: 2,
+            height: 2,
+            ..EngineConfig::default()
+        };
+        let (mut engine, _rx) = Engine::new(cfg);
         engine.add_system(Box::new(MovementSystem::new()));
         engine.add_system(Box::new(PlayerSystem::new()));
         engine.add_system(Box::new(BombSystem::new()));
