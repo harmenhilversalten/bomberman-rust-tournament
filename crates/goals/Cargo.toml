@@ -4,3 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+state = { path = "../state" }
+events = { path = "../events" }
+thiserror = { workspace = true }
