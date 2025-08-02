@@ -8,3 +8,4 @@ pub mod game_state;
 pub mod snapshot;
 
 pub use game_state::GameState;
+pub use snapshot::SnapshotView;

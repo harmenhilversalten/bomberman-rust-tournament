@@ -1,8 +1,13 @@
 //! Core game grid storing tiles and entities.
+#![allow(unsafe_code)]
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use super::tile::Tile;
+use super::{delta::GridDelta, tile::Tile};
 use crate::components::{AgentState, Bomb};
+use crate::state::snapshot::{SnapshotInner, SnapshotView};
+use crossbeam_epoch::{self as epoch, Atomic, Owned};
+use tokio::sync::watch;
+use triomphe::Arc;
 
 /// Main game grid structure holding tiles and entities.
 #[derive(Debug)]
@@ -13,19 +18,36 @@ pub struct GameGrid {
     bombs: Vec<Bomb>,
     agents: Vec<AgentState>,
     version: AtomicU64,
+    snapshot: Atomic<SnapshotInner>,
+    delta_tx: watch::Sender<GridDelta>,
 }
 
 impl GameGrid {
     /// Creates a new grid filled with `Tile::Empty` tiles.
     pub fn new(width: usize, height: usize) -> Self {
         let tiles = vec![Tile::Empty; width * height];
+        let bombs = Vec::new();
+        let agents = Vec::new();
+        let (tx, _rx) = watch::channel(GridDelta::None);
+
+        let inner = SnapshotInner::new(
+            Arc::<[Tile]>::from(tiles.clone()),
+            Arc::<[Bomb]>::from(bombs.clone()),
+            Arc::<[AgentState]>::from(agents.clone()),
+            0,
+        );
+
+        let snapshot = Atomic::new(inner);
+
         Self {
             width,
             height,
             tiles,
-            bombs: Vec::new(),
-            agents: Vec::new(),
+            bombs,
+            agents,
             version: AtomicU64::new(0),
+            snapshot,
+            delta_tx: tx,
         }
     }
 
@@ -65,9 +87,79 @@ impl GameGrid {
         self.agents.len() - 1
     }
 
+    /// Applies a delta to the grid and broadcasts the change.
+    pub fn apply_delta(&mut self, delta: GridDelta) {
+        match &delta {
+            GridDelta::None => {}
+            GridDelta::SetTile { x, y, tile } => self.set_tile(*x, *y, *tile),
+            GridDelta::AddBomb(b) => {
+                self.bombs.push(b.clone());
+                self.version.fetch_add(1, Ordering::Relaxed);
+            }
+            GridDelta::AddAgent(a) => {
+                self.agents.push(a.clone());
+                self.version.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+        self.update_snapshot();
+        let _ = self.delta_tx.send(delta);
+    }
+
     /// Current version of the grid.
     pub fn version(&self) -> u64 {
         self.version.load(Ordering::Relaxed)
+    }
+
+    /// Subscribe to grid deltas.
+    pub fn subscribe(&self) -> watch::Receiver<GridDelta> {
+        self.delta_tx.subscribe()
+    }
+
+    /// Produce an immutable snapshot of the grid.
+    pub fn snapshot(&self) -> SnapshotView {
+        let guard = epoch::pin();
+        let shared = self.snapshot.load(Ordering::Acquire, &guard);
+        // Safety: pointer was constructed from a valid SnapshotInner
+        let inner = unsafe { shared.deref() };
+        let view = SnapshotView::new(Arc::new(SnapshotInner::new(
+            inner.tiles.clone(),
+            inner.bombs.clone(),
+            inner.agents.clone(),
+            inner.version,
+        )));
+        drop(guard);
+        view
+    }
+
+    /// Serialize a snapshot into a vector of floats for RL agents.
+    pub fn to_observation(&self, agent_id: usize) -> Vec<f32> {
+        let snapshot = self.snapshot();
+        let mut obs: Vec<f32> = snapshot.tiles().iter().map(|t| t.to_u8() as f32).collect();
+        if let Some(agent) = snapshot.agents().iter().find(|a| a.id == agent_id) {
+            obs.push(agent.position.0 as f32);
+            obs.push(agent.position.1 as f32);
+            obs.push(agent.bombs_left as f32);
+            obs.push(agent.power as f32);
+        } else {
+            obs.extend_from_slice(&[0.0, 0.0, 0.0, 0.0]);
+        }
+        obs
+    }
+
+    fn update_snapshot(&mut self) {
+        let new_inner = SnapshotInner::new(
+            Arc::<[Tile]>::from(self.tiles.clone()),
+            Arc::<[Bomb]>::from(self.bombs.clone()),
+            Arc::<[AgentState]>::from(self.agents.clone()),
+            self.version(),
+        );
+        let guard = epoch::pin();
+        let old = self
+            .snapshot
+            .swap(Owned::new(new_inner), Ordering::AcqRel, &guard);
+        unsafe {
+            guard.defer_destroy(old);
+        }
     }
 }
 
@@ -99,5 +191,38 @@ mod tests {
         assert_eq!(grid.version(), 1);
         grid.add_agent(AgentState::new(0, (0, 0)));
         assert_eq!(grid.version(), 2);
+    }
+
+    #[test]
+    fn snapshot_consistency() {
+        let mut grid = GameGrid::new(2, 2);
+        let snap = grid.snapshot();
+        grid.apply_delta(GridDelta::SetTile {
+            x: 0,
+            y: 0,
+            tile: Tile::Wall,
+        });
+        assert_eq!(snap.tiles()[0], Tile::Empty);
+        let new_snap = grid.snapshot();
+        assert_eq!(new_snap.tiles()[0], Tile::Wall);
+    }
+
+    #[test]
+    fn subscribe_receives_delta() {
+        let mut grid = GameGrid::new(1, 1);
+        let mut rx = grid.subscribe();
+        grid.apply_delta(GridDelta::SetTile {
+            x: 0,
+            y: 0,
+            tile: Tile::Wall,
+        });
+        assert_eq!(
+            rx.borrow_and_update().clone(),
+            GridDelta::SetTile {
+                x: 0,
+                y: 0,
+                tile: Tile::Wall
+            }
+        );
     }
 }
