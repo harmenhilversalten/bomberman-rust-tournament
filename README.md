@@ -7,6 +7,8 @@ It serves as a playground to explore the language while incrementally adopting t
 
 The project is organized as a Cargo workspace. The main engine crate lives in `crates/engine`.
 That crate exposes an `Engine` struct managing the shared `GameGrid` and broadcasting `GridDelta` events each tick.
+Baseline AI implementations reside in `crates/bot` and include heuristic,
+reactive and planning strategies that can be switched at runtime.
 
 Build and launch a tournament with the default settings:
 
