@@ -45,9 +45,11 @@ impl SwitchingAI {
 }
 
 use crate::bot::decision::DecisionMaker;
+use events::events::BotDecision;
+use state::grid::GridDelta;
 
-impl DecisionMaker<i32, i32> for SwitchingAI {
-    fn decide(&mut self, snapshot: i32) -> i32 {
+impl DecisionMaker<GridDelta, BotDecision> for SwitchingAI {
+    fn decide(&mut self, snapshot: GridDelta) -> BotDecision {
         match self.current {
             AiType::Heuristic => self.heuristic.decide(snapshot),
             AiType::Reactive => self.reactive.decide(snapshot),
@@ -60,16 +62,18 @@ impl DecisionMaker<i32, i32> for SwitchingAI {
 mod tests {
     use super::*;
     use crate::bot::decision::DecisionMaker;
+    use events::events::BotDecision;
+    use state::grid::GridDelta;
 
     #[test]
     fn switching_between_strategies_changes_behavior() {
         let mut ai = SwitchingAI::new(AiType::Heuristic);
-        assert_eq!(ai.decide(1), 2);
+        assert_eq!(ai.decide(GridDelta::None), BotDecision::PlaceBomb);
 
         ai.switch(AiType::Reactive);
-        assert_eq!(ai.decide(1), 1);
+        assert_eq!(ai.decide(GridDelta::None), BotDecision::Wait);
 
         ai.switch(AiType::Planning);
-        assert_eq!(ai.decide(1), 0);
+        assert_eq!(ai.decide(GridDelta::None), BotDecision::Wait);
     }
 }

@@ -1,59 +1,62 @@
-use std::time::Instant;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use std::{sync::Arc, time::Instant};
+
+use crossbeam::channel::Receiver;
+use events::{
+    bus::{EventBus, EventFilter},
+    events::{BotDecision, BotEvent, Event, SystemEvent},
+};
+use state::grid::GridDelta;
 
 use super::{BotConfig, BotState, DecisionMaker};
 
-/// Core bot structure coordinating decision making.
-pub struct Bot<Snap, Command>
-where
-    Snap: Send + 'static,
-    Command: Send + 'static,
-{
+/// Core bot structure coordinating decision making via the event bus.
+pub struct Bot {
     config: BotConfig,
-    snapshot_rx: UnboundedReceiver<Snap>,
-    command_tx: UnboundedSender<Command>,
-    ai: Box<dyn DecisionMaker<Snap, Command>>,
+    events: Arc<EventBus>,
+    event_rx: Receiver<Event>,
+    ai: Box<dyn DecisionMaker<GridDelta, BotDecision>>,
     state: BotState,
 }
 
-impl<Snap, Command> Bot<Snap, Command>
-where
-    Snap: Send + 'static,
-    Command: Send + 'static,
-{
-    /// Create a new [`Bot`].
+impl Bot {
+    /// Create a new [`Bot`] subscribing to [`GridDelta`] events.
     pub fn new(
         config: BotConfig,
-        snapshot_rx: UnboundedReceiver<Snap>,
-        command_tx: UnboundedSender<Command>,
-        ai: Box<dyn DecisionMaker<Snap, Command>>,
+        events: Arc<EventBus>,
+        ai: Box<dyn DecisionMaker<GridDelta, BotDecision>>,
     ) -> Self {
+        let filter = EventFilter::new(|e| matches!(e, Event::Grid(_)));
+        let (_id, rx) = events.subscribe_with_filter(Some(filter));
         Self {
             config,
-            snapshot_rx,
-            command_tx,
+            events,
+            event_rx: rx,
             ai,
             state: BotState::default(),
         }
     }
 
-    /// Run the bot loop processing snapshots and emitting commands.
+    /// Run the bot loop processing `GridDelta` events and emitting commands.
     ///
-    /// The loop terminates when the snapshot channel closes or when sending
-    /// commands fails. The final [`BotState`] is returned for inspection.
-    pub async fn run(mut self) -> BotState {
-        while let Some(snapshot) = self.snapshot_rx.recv().await {
-            let start = Instant::now();
-            let command = self.ai.decide(snapshot);
-            let duration = start.elapsed();
-            self.state.record_decision(duration);
-
-            if duration > self.config.decision_timeout {
-                // In future, log or handle long decision times.
-            }
-
-            if self.command_tx.send(command).is_err() {
-                break;
+    /// The loop terminates when the event bus is dropped. The final [`BotState`] is returned.
+    pub fn run(mut self) -> BotState {
+        while let Ok(event) = self.event_rx.recv() {
+            match event {
+                Event::Grid(delta) => {
+                    let start = Instant::now();
+                    let decision = self.ai.decide(delta);
+                    let duration = start.elapsed();
+                    self.state.record_decision(duration);
+                    if duration > self.config.decision_timeout {
+                        // In future, log or handle long decision times.
+                    }
+                    self.events.broadcast(Event::Bot(BotEvent::Decision {
+                        bot_id: self.config.id as usize,
+                        decision,
+                    }));
+                }
+                Event::System(SystemEvent::EngineStopped) => break,
+                _ => {}
             }
         }
         self.state

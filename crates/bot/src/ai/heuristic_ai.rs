@@ -1,11 +1,13 @@
 use crate::bot::decision::DecisionMaker;
+use events::events::BotDecision;
+use state::grid::GridDelta;
 
-/// Simple heuristic AI that increments the snapshot.
+/// Simple heuristic AI that always places a bomb.
 pub struct HeuristicAI;
 
-impl DecisionMaker<i32, i32> for HeuristicAI {
-    fn decide(&mut self, snapshot: i32) -> i32 {
-        snapshot + 1
+impl DecisionMaker<GridDelta, BotDecision> for HeuristicAI {
+    fn decide(&mut self, _snapshot: GridDelta) -> BotDecision {
+        BotDecision::PlaceBomb
     }
 }
 
@@ -13,10 +15,12 @@ impl DecisionMaker<i32, i32> for HeuristicAI {
 mod tests {
     use super::*;
     use crate::bot::decision::DecisionMaker;
+    use events::events::BotDecision;
+    use state::grid::GridDelta;
 
     #[test]
-    fn heuristic_ai_increments_snapshot() {
+    fn heuristic_ai_places_bomb() {
         let mut ai = HeuristicAI;
-        assert_eq!(ai.decide(1), 2);
+        assert_eq!(ai.decide(GridDelta::None), BotDecision::PlaceBomb);
     }
 }

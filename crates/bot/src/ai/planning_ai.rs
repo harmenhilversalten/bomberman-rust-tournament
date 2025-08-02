@@ -1,11 +1,13 @@
 use crate::bot::decision::DecisionMaker;
+use events::events::BotDecision;
+use state::grid::GridDelta;
 
-/// Planning AI that decrements the snapshot to simulate forward planning.
+/// Planning AI that currently waits each tick.
 pub struct PlanningAI;
 
-impl DecisionMaker<i32, i32> for PlanningAI {
-    fn decide(&mut self, snapshot: i32) -> i32 {
-        snapshot - 1
+impl DecisionMaker<GridDelta, BotDecision> for PlanningAI {
+    fn decide(&mut self, _snapshot: GridDelta) -> BotDecision {
+        BotDecision::Wait
     }
 }
 
@@ -13,10 +15,12 @@ impl DecisionMaker<i32, i32> for PlanningAI {
 mod tests {
     use super::*;
     use crate::bot::decision::DecisionMaker;
+    use events::events::BotDecision;
+    use state::grid::GridDelta;
 
     #[test]
-    fn planning_ai_decrements_snapshot() {
+    fn planning_ai_waits() {
         let mut ai = PlanningAI;
-        assert_eq!(ai.decide(3), 2);
+        assert_eq!(ai.decide(GridDelta::None), BotDecision::Wait);
     }
 }
