@@ -50,5 +50,9 @@ pub trait Grid {
 }
 
 pub mod algorithms;
+pub mod grid;
+pub mod heuristic;
 
 pub use algorithms::{AStar, DStarLite, JumpPointSearch, Pathfinder};
+pub use grid::PathGrid;
+pub use heuristic::{Euclidean, Heuristic, Manhattan};
