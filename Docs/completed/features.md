@@ -46,3 +46,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Bot kernel coordinating decision loop via channels ([Backlog #24](../backlog/backlog.md#24-bot-crate-%E2%80%93-core-kernel)).
 - AI modules with heuristic, reactive and planning strategies plus runtime switching ([Backlog #25](../backlog/backlog.md#25-bot-crate-%E2%80%93-ai-modules)).
 - Perception and action modules with memory and executor ([Backlog #26](../backlog/backlog.md#26-bot-crate-%E2%80%93-perception-and-action)).
+- RL policy and value estimation traits with Torch and random implementations ([Backlog #27](../backlog/backlog.md#27-rl-crate-%E2%80%93-policy-and-value-estimation)).
