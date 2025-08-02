@@ -7,8 +7,10 @@ pub type Position = (u16, u16);
 /// Identifier for bombs.
 pub type BombId = usize;
 
+use serde::{Deserialize, Serialize};
+
 /// Events emitted by the game engine.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum GameEvent {
     /// An entity moved to a new position.
     EntityMoved {

@@ -6,7 +6,9 @@
 pub mod bus;
 pub mod events;
 pub mod queue;
+pub mod serialization;
 
 pub use bus::{EventBus, EventFilter, SubscriberId};
 pub use events::{BotDecision, BotEvent, Event, GameEvent, SystemEvent};
 pub use queue::EventPriority;
+pub use serialization::{Transition, TransitionRecorder, decoder, encoder};

@@ -2,9 +2,10 @@ use crossbeam::queue::SegQueue;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::events::Event;
+use serde::{Deserialize, Serialize};
 
 /// Priority levels for events.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EventPriority {
     /// High priority events are processed first.
     High,
