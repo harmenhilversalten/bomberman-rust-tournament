@@ -107,6 +107,9 @@ dependencies = [
 [[package]]
 name = "bot"
 version = "0.1.0"
+dependencies = [
+ "tokio",
+]
 
 [[package]]
 name = "bumpalo"
