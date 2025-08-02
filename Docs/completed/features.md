@@ -42,3 +42,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Bomb placement strategies with safe and strategic options plus timing and remote detonation support ([Backlog #20](../backlog/backlog.md#20-bombs-crate-%E2%80%93-placement-and-timing)).
 - Bomb power effects, kicking mechanics, and analysis utilities ([Backlog #21](../backlog/backlog.md#21-bombs-crate-%E2%80%93-power-and-analysis)).
 - Goal definitions and planner ([Backlog #22](../backlog/backlog.md#22-goals-crate-%E2%80%93-goal-definitions-and-planner)).
+- Goal execution and hierarchy management ([Backlog #23](../backlog/backlog.md#23-goals-crate-%E2%80%93-execution-and-hierarchy)).
