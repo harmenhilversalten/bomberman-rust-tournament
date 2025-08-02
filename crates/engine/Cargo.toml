@@ -13,3 +13,5 @@ serde_json = { workspace = true }
 events = { path = "../events" }
 bombs = { path = "../bombs" }
 crossbeam = { workspace = true }
+bot = { path = "../bot" }
+thiserror = { workspace = true }

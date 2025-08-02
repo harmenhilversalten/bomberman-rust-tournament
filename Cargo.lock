@@ -117,6 +117,7 @@ dependencies = [
  "crossbeam",
  "events",
  "state",
+ "thiserror",
 ]
 
 [[package]]
@@ -352,6 +353,7 @@ name = "engine"
 version = "0.1.0"
 dependencies = [
  "bombs",
+ "bot",
  "crossbeam",
  "events",
  "num_cpus",
@@ -359,6 +361,7 @@ dependencies = [
  "serde",
  "serde_json",
  "state",
+ "thiserror",
  "tokio",
 ]
 

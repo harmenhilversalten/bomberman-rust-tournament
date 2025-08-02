@@ -7,3 +7,4 @@ edition = "2024"
 events = { path = "../events" }
 state = { path = "../state" }
 crossbeam = { workspace = true }
+thiserror = { workspace = true }
