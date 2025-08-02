@@ -9,7 +9,10 @@ pub use game_events::GameEvent;
 pub use system_events::SystemEvent;
 
 /// Wrapper enum combining all event categories.
-#[derive(Debug, Clone, PartialEq)]
+use serde::{Deserialize, Serialize};
+
+/// Wrapper enum combining all event categories.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Event {
     /// Game-related event.
     Game(GameEvent),

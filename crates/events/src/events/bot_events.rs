@@ -3,8 +3,10 @@
 /// Identifier for a bot instance.
 pub type BotId = usize;
 
+use serde::{Deserialize, Serialize};
+
 /// Decisions that a bot might produce.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum BotDecision {
     /// Bot chose to wait.
     Wait,
@@ -13,7 +15,7 @@ pub enum BotDecision {
 }
 
 /// Events emitted by or for bots.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum BotEvent {
     /// A decision was made by a bot.
     Decision {
