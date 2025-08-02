@@ -6,9 +6,10 @@ use crate::{
     simulation::{DeterminismChecker, Replay, ReplayRecorder},
     systems::System,
 };
+use crossbeam::channel::Receiver;
 use events::{
-    bus::EventBus,
-    events::{Event, GameEvent},
+    bus::{EventBus, EventFilter},
+    events::{BotEvent, Event, GameEvent},
 };
 use state::{GameGrid, grid::GridDelta};
 use tokio::sync::watch;
@@ -23,6 +24,8 @@ pub struct Engine {
     replay_recorder: ReplayRecorder,
     determinism_checker: DeterminismChecker,
     events: Arc<EventBus>,
+    command_rx: Receiver<Event>,
+    last_command: Option<BotEvent>,
     tick: u64,
 }
 
@@ -32,6 +35,8 @@ impl Engine {
         let grid = GameGrid::new(config.width, config.height);
         let (tx, rx) = watch::channel(GridDelta::None);
         let events = Arc::new(EventBus::new());
+        let filter = EventFilter::new(|e| matches!(e, Event::Bot(_)));
+        let (_id, cmd_rx) = events.subscribe_with_filter(Some(filter));
         (
             Self {
                 config,
@@ -42,6 +47,8 @@ impl Engine {
                 replay_recorder: ReplayRecorder::new(),
                 determinism_checker: DeterminismChecker::new(),
                 events: Arc::clone(&events),
+                command_rx: cmd_rx,
+                last_command: None,
                 tick: 0,
             },
             rx,
@@ -52,6 +59,9 @@ impl Engine {
     /// Advances the game by a single tick by running all registered systems.
     pub fn tick(&mut self) {
         self.scheduler.run();
+        while let Ok(Event::Bot(cmd)) = self.command_rx.try_recv() {
+            self.last_command = Some(cmd);
+        }
         let grid = self.grid.read().expect("grid lock poisoned");
         self.determinism_checker.record(&grid);
         self.tick += 1;
@@ -123,7 +133,8 @@ impl Engine {
                 let mut g = grid.write().expect("grid lock poisoned");
                 g.apply_delta(delta.clone());
                 recorder.record(delta.clone());
-                let _ = tx.send(delta);
+                let _ = tx.send(delta.clone());
+                events.broadcast(Event::Grid(delta));
             }
         });
         self.systems.push(sys);
@@ -137,6 +148,7 @@ mod tests {
         Arc,
         atomic::{AtomicBool, Ordering},
     };
+    use events::events::BotDecision;
 
     #[test]
     fn tick_broadcasts_system_delta() {
@@ -205,6 +217,43 @@ mod tests {
             rx_event.try_recv().unwrap(),
             Event::Game(GameEvent::TickCompleted { tick: 1 })
         );
+    }
+
+    #[test]
+    fn tick_broadcasts_grid_event() {
+        use crate::{config::EngineConfig, systems::MovementSystem};
+        use events::bus::EventFilter;
+        let config = EngineConfig {
+            width: 1,
+            height: 1,
+            ..EngineConfig::default()
+        };
+        let (mut engine, _rx, events) = Engine::new(config);
+        engine.add_system(Box::new(MovementSystem::new()));
+        let filter = EventFilter::new(|e| matches!(e, Event::Grid(_)));
+        let (_id, rx_event) = events.subscribe_with_filter(Some(filter));
+        engine.tick();
+        assert!(matches!(rx_event.try_recv().unwrap(), Event::Grid(_)));
+    }
+
+    #[test]
+    fn engine_processes_bot_commands() {
+        use crate::config::EngineConfig;
+        let cfg = EngineConfig {
+            width: 1,
+            height: 1,
+            ..EngineConfig::default()
+        };
+        let (mut engine, _rx, events) = Engine::new(cfg);
+        events.broadcast(Event::Bot(BotEvent::Decision {
+            bot_id: 1,
+            decision: BotDecision::Wait,
+        }));
+        engine.tick();
+        assert!(matches!(
+            engine.last_command,
+            Some(BotEvent::Decision { .. })
+        ));
     }
 
     #[test]

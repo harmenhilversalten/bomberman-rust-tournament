@@ -1,11 +1,13 @@
 use crate::bot::decision::DecisionMaker;
+use events::events::BotDecision;
+use state::grid::GridDelta;
 
-/// Reactive AI that echoes the snapshot as the command.
+/// Reactive AI that waits on every tick.
 pub struct ReactiveAI;
 
-impl DecisionMaker<i32, i32> for ReactiveAI {
-    fn decide(&mut self, snapshot: i32) -> i32 {
-        snapshot
+impl DecisionMaker<GridDelta, BotDecision> for ReactiveAI {
+    fn decide(&mut self, _snapshot: GridDelta) -> BotDecision {
+        BotDecision::Wait
     }
 }
 
@@ -13,10 +15,12 @@ impl DecisionMaker<i32, i32> for ReactiveAI {
 mod tests {
     use super::*;
     use crate::bot::decision::DecisionMaker;
+    use events::events::BotDecision;
+    use state::grid::GridDelta;
 
     #[test]
-    fn reactive_ai_echoes_snapshot() {
+    fn reactive_ai_waits() {
         let mut ai = ReactiveAI;
-        assert_eq!(ai.decide(5), 5);
+        assert_eq!(ai.decide(GridDelta::None), BotDecision::Wait);
     }
 }

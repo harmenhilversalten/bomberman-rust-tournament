@@ -114,7 +114,9 @@ dependencies = [
 name = "bot"
 version = "0.1.0"
 dependencies = [
- "tokio",
+ "crossbeam",
+ "events",
+ "state",
 ]
 
 [[package]]
@@ -350,6 +352,7 @@ name = "engine"
 version = "0.1.0"
 dependencies = [
  "bombs",
+ "crossbeam",
  "events",
  "num_cpus",
  "rand 0.9.2",
@@ -382,6 +385,7 @@ dependencies = [
  "crossbeam",
  "serde",
  "serde_json",
+ "state",
 ]
 
 [[package]]

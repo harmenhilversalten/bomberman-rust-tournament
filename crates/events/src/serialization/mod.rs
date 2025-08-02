@@ -61,10 +61,24 @@ impl TransitionRecorder {
 mod tests {
     use super::*;
     use crate::events::{Event, GameEvent};
+    use state::grid::{GridDelta, Tile};
 
     #[test]
     fn event_serialization_round_trip() {
         let event = Event::Game(GameEvent::TickCompleted { tick: 7 });
+        let json = encoder::encode_event(&event).unwrap();
+        let decoded = decoder::decode_event(&json).unwrap();
+        assert_eq!(event, decoded);
+    }
+
+    #[test]
+    fn grid_event_serialization_round_trip() {
+        let delta = GridDelta::SetTile {
+            x: 0,
+            y: 0,
+            tile: Tile::Wall,
+        };
+        let event = Event::Grid(delta);
         let json = encoder::encode_event(&event).unwrap();
         let decoded = decoder::decode_event(&json).unwrap();
         assert_eq!(event, decoded);

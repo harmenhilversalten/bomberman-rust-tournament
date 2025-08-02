@@ -104,4 +104,16 @@ mod tests {
             assert_eq!(decoded.grid.agents().len(), 1);
         }
     }
+
+    #[test]
+    fn grid_delta_serialization_round_trip() {
+        let delta = GridDelta::SetTile {
+            x: 1,
+            y: 2,
+            tile: Tile::Empty,
+        };
+        let json = serde_json::to_string(&delta).expect("serialize");
+        let decoded: GridDelta = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(delta, decoded);
+    }
 }

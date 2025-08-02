@@ -1,8 +1,9 @@
 use super::tile::Tile;
 use crate::components::{AgentState, Bomb};
+use serde::{Deserialize, Serialize};
 
 /// Changes applied to the grid, broadcast to subscribers.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize)]
 pub enum GridDelta {
     /// No change, used as initial value for watchers.
     #[default]
