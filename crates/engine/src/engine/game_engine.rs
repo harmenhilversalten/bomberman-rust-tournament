@@ -1,13 +1,17 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use super::scheduler::TaskScheduler;
-use crate::simulation::{DeterminismChecker, Replay, ReplayRecorder};
-use crate::systems::System;
+use crate::{
+    config::EngineConfig,
+    simulation::{DeterminismChecker, Replay, ReplayRecorder},
+    systems::System,
+};
 use state::{GameGrid, grid::GridDelta};
 use tokio::sync::watch;
 
 /// Core game engine advancing the simulation and broadcasting changes.
 pub struct Engine {
+    config: EngineConfig,
     grid: Arc<RwLock<GameGrid>>,
     delta_tx: watch::Sender<GridDelta>,
     scheduler: TaskScheduler,
@@ -17,12 +21,13 @@ pub struct Engine {
 }
 
 impl Engine {
-    /// Creates a new engine with a square grid of the given size.
-    pub fn new(size: usize) -> (Self, watch::Receiver<GridDelta>) {
-        let grid = GameGrid::new(size, size);
+    /// Creates a new engine configured via [`EngineConfig`].
+    pub fn new(config: EngineConfig) -> (Self, watch::Receiver<GridDelta>) {
+        let grid = GameGrid::new(config.width, config.height);
         let (tx, rx) = watch::channel(GridDelta::None);
         (
             Self {
+                config,
                 grid: Arc::new(RwLock::new(grid)),
                 delta_tx: tx,
                 scheduler: TaskScheduler::new(),
@@ -44,6 +49,11 @@ impl Engine {
     /// Access the shared game grid.
     pub fn grid(&self) -> Arc<RwLock<GameGrid>> {
         Arc::clone(&self.grid)
+    }
+
+    /// Access the engine configuration.
+    pub fn config(&self) -> &EngineConfig {
+        &self.config
     }
 
     /// Start recording a replay.
@@ -116,9 +126,14 @@ mod tests {
 
     #[test]
     fn tick_broadcasts_system_delta() {
-        use crate::systems::MovementSystem;
+        use crate::{config::EngineConfig, systems::MovementSystem};
 
-        let (mut engine, mut rx) = Engine::new(1);
+        let config = EngineConfig {
+            width: 1,
+            height: 1,
+            ..EngineConfig::default()
+        };
+        let (mut engine, mut rx) = Engine::new(config);
         engine.add_system(Box::new(MovementSystem::new()));
         assert_eq!(*rx.borrow(), GridDelta::None);
         engine.tick();
@@ -130,7 +145,13 @@ mod tests {
 
     #[test]
     fn tick_runs_scheduler_tasks() {
-        let (mut engine, _rx) = Engine::new(1);
+        use crate::config::EngineConfig;
+        let config = EngineConfig {
+            width: 1,
+            height: 1,
+            ..EngineConfig::default()
+        };
+        let (mut engine, _rx) = Engine::new(config);
         let flag = Arc::new(AtomicBool::new(false));
         let flag_clone = Arc::clone(&flag);
         engine.add_task("flag", vec![], true, move || {
@@ -138,5 +159,20 @@ mod tests {
         });
         engine.tick();
         assert!(flag.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn engine_uses_config() {
+        use crate::config::EngineConfig;
+        let cfg = EngineConfig {
+            width: 2,
+            height: 3,
+            tick_rate: 30,
+            ..EngineConfig::default()
+        };
+        let (engine, _rx) = Engine::new(cfg.clone());
+        assert_eq!(engine.config().tick_rate, 30);
+        assert_eq!(engine.config().width, 2);
+        assert_eq!(engine.config().height, 3);
     }
 }
