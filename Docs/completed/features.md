@@ -30,3 +30,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Replay recording and determinism checks ([Backlog #8](../backlog/backlog.md#8-engine-crate-%E2%80%93-replay-and-determinism)).
 - Engine configuration and game rules ([Backlog #9](../backlog/backlog.md#9-engine-crate-%E2%80%93-configuration)).
 - Event types and bus with subscriber registration ([Backlog #10](../backlog/backlog.md#10-events-crate-%E2%80%93-event-types-and-bus)).
+- Event queue with priority levels and subscription filters ([Backlog #11](../backlog/backlog.md#11-events-crate-%E2%80%93-queue-and-filtering)).

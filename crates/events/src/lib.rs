@@ -5,6 +5,8 @@
 
 pub mod bus;
 pub mod events;
+pub mod queue;
 
-pub use bus::{EventBus, SubscriberId};
-pub use events::{BotEvent, Event, GameEvent, SystemEvent};
+pub use bus::{EventBus, EventFilter, SubscriberId};
+pub use events::{BotDecision, BotEvent, Event, GameEvent, SystemEvent};
+pub use queue::EventPriority;

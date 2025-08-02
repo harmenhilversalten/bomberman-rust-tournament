@@ -4,7 +4,7 @@ pub mod bot_events;
 pub mod game_events;
 pub mod system_events;
 
-pub use bot_events::BotEvent;
+pub use bot_events::{BotDecision, BotEvent};
 pub use game_events::GameEvent;
 pub use system_events::SystemEvent;
 
