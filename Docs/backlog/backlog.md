@@ -27,31 +27,6 @@ Completed backlog items 1-29 are archived in [completed.md](completed.md).
   * Event bus must handle cross-crate event serialization
 * **Prompt**: “Implement event bus integration across all crates. Ensure `GridDelta` events are broadcast after each engine tick and that bot commands are published back to the engine via the event bus. Add event subscriptions to all AI components.”
 
----
-
-## BPI-003: Integrate AI Components (Goals, Path, Influence) with Bot Kernel
-* **Summary**: Plug the goals, path-finding, and influence-map crates into the bot kernel for cohesive, goal-driven decision making.
-* **Requirements**
-  * Bot kernel must use the `goals` crate for high-level objective selection
-  * Pathfinding algorithms must be accessible to bot decision making
-  * Influence maps must be used for danger/opportunity assessment
-  * All AI components must work together seamlessly
-* **Files that need changing**
-  * `crates/bot/src/bot/kernel.rs` – Add AI component integration
-  * `crates/bot/src/ai/mod.rs` – Implement AI component usage
-  * `crates/goals/src/lib.rs` – Export goal generation functions
-  * `crates/path/src/lib.rs` – Export pathfinding functions
-  * `crates/influence/src/lib.rs` – Export influence map functions
-  * `crates/bot/Cargo.toml` – Add dependencies on `goals`, `path`, `influence`
-* **What needs to change**
-  * Bot kernel must instantiate and use goal manager
-  * Decision making process must incorporate pathfinding results
-  * Influence maps must be consulted for safety assessment
-  * AI components must share data structures and interfaces
-* **Prompt**: “Integrate goals, path, and influence crates with the bot kernel. Implement goal-based decision making, incorporate pathfinding results, and use influence maps for danger assessment. Ensure all AI components work together cohesively.”
-
----
-
 ## BPI-004: Implement Reinforcement Learning Integration
 * **Summary**: Add an optional RL mode in which bots load neural-network policies, generate observations, and compute rewards for training.
 * **Requirements**

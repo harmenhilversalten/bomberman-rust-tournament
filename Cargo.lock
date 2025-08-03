@@ -116,6 +116,9 @@ version = "0.1.0"
 dependencies = [
  "crossbeam",
  "events",
+ "goals",
+ "influence",
+ "path",
  "state",
  "thiserror",
 ]
@@ -457,6 +460,8 @@ name = "goals"
 version = "0.1.0"
 dependencies = [
  "events",
+ "influence",
+ "path",
  "state",
  "thiserror",
 ]
@@ -743,6 +748,7 @@ name = "path"
 version = "0.1.0"
 dependencies = [
  "criterion",
+ "influence",
 ]
 
 [[package]]

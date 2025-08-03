@@ -3,14 +3,10 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
-use events::{bus::EventBus, events::BotDecision};
+use events::bus::EventBus;
 use tokio::task::JoinHandle;
 
-use bot::{
-    AiType, Bot as KernelBot, BotConfig, BotState, DecisionMaker, HeuristicAI, PlanningAI,
-    ReactiveAI,
-};
-use state::grid::GridDelta;
+use bot::{Bot as KernelBot, BotConfig, BotState};
 
 use events::events::bot_events::BotId;
 
@@ -58,14 +54,6 @@ impl BotManager {
         }
     }
 
-    fn build_ai(&self, ai: AiType) -> Box<dyn DecisionMaker<GridDelta, BotDecision>> {
-        match ai {
-            AiType::Heuristic => Box::new(HeuristicAI),
-            AiType::Reactive => Box::new(ReactiveAI),
-            AiType::Planning => Box::new(PlanningAI),
-        }
-    }
-
     /// Spawn a bot using the provided configuration.
     pub fn spawn_bot(
         &self,
@@ -77,8 +65,7 @@ impl BotManager {
             .map_err(|e| BotError::InvalidConfig(e.to_string()))?;
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
         config.id = id;
-        let ai = self.build_ai(config.ai_type);
-        let bot = KernelBot::new(config, bus, ai);
+        let bot = KernelBot::new(config, bus);
         let join = self.run_bot_decision_loop(bot);
         Ok(BotHandle { id, join })
     }
@@ -92,6 +79,7 @@ impl BotManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bot::AiType;
 
     #[test]
     fn spawns_bot_and_returns_handle() {

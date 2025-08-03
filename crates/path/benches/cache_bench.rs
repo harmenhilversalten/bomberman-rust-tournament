@@ -1,6 +1,7 @@
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use path::algorithms::Pathfinder;
 use path::cache::{CacheKey, EvictionPolicy, PathCache};
-use path::{AStar, PathGrid, Pathfinder, Point};
+use path::{AStar, PathGrid, Point};
 
 fn bench_astar_with_cache(c: &mut Criterion) {
     let grid = PathGrid::new(10, 10);

@@ -4,12 +4,16 @@
 
 /// Core influence map functionality.
 pub mod core;
+/// Layer type aliases.
+pub mod layers;
+/// Simplified map wrappers.
+pub mod map;
 /// Update strategies and dirty region tracking.
 pub mod update;
 /// Visualization and export helpers.
 pub mod visualization;
 
-pub use core::{
-    DangerSource, DirtyRegion, InfluenceError, InfluenceMap, InfluenceType, OpportunitySource,
-};
+pub use core::{DangerSource, DirtyRegion, InfluenceError, InfluenceType, OpportunitySource};
+pub use layers::{DangerLayer, OpportunityLayer};
+pub use map::{InfluenceData, InfluenceMap};
 pub use update::{FullUpdate, IncrementalUpdate, UpdateStrategy};

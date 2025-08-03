@@ -243,3 +243,11 @@ This archive lists backlog items that have been completed and moved out of the a
   - Per-bot decision tasks run asynchronously
   - Bot actions are processed in the correct game tick
 - **Prompt**: "Connect the bot decision loop to the engine. Implement bot spawning in the engine, ensure bots receive state updates via the event bus, and process bot commands in the game loop. Add async bot task management."
+
+## 31. Integrate AI Components (Goals, Path, Influence) with Bot Kernel
+- **Summary**: Plug the goals, pathfinding, and influence-map crates into the bot kernel for cohesive, goal-driven decision making.
+- **Requirements**:
+  - Bot kernel uses goal manager for high-level objectives.
+  - Pathfinding and influence data inform decision scoring.
+  - Components share data through defined interfaces.
+- **Prompt**: "Integrate goals, path, and influence crates with the bot kernel and implement goal-based decision flow."

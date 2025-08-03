@@ -8,6 +8,11 @@ use events::{
 use state::grid::GridDelta;
 
 use super::{BotConfig, BotState, DecisionMaker};
+use crate::ai::AIDecisionPipeline;
+use goals::GoalManager;
+use influence::map::InfluenceMap;
+use path::Pathfinder;
+use std::sync::Mutex;
 
 /// Core bot structure coordinating decision making via the event bus.
 pub struct Bot {
@@ -15,20 +20,33 @@ pub struct Bot {
     events: Arc<EventBus>,
     ai: Box<dyn DecisionMaker<GridDelta, BotDecision>>,
     state: BotState,
+    #[allow(dead_code)]
+    goal_manager: Arc<GoalManager>,
+    #[allow(dead_code)]
+    pathfinder: Arc<Pathfinder>,
+    #[allow(dead_code)]
+    influence_map: Arc<Mutex<InfluenceMap>>,
 }
 
 impl Bot {
     /// Create a new [`Bot`] referencing the shared [`EventBus`].
-    pub fn new(
-        config: BotConfig,
-        events: Arc<EventBus>,
-        ai: Box<dyn DecisionMaker<GridDelta, BotDecision>>,
-    ) -> Self {
+    pub fn new(config: BotConfig, events: Arc<EventBus>) -> Self {
+        let goal_manager = Arc::new(GoalManager::new());
+        let pathfinder = Arc::new(Pathfinder::new());
+        let influence_map = Arc::new(Mutex::new(InfluenceMap::new(1, 1)));
+        let ai = Box::new(AIDecisionPipeline::new(
+            Arc::clone(&goal_manager),
+            Arc::clone(&pathfinder),
+            Arc::clone(&influence_map),
+        ));
         Self {
             config,
             events,
             ai,
             state: BotState::default(),
+            goal_manager,
+            pathfinder,
+            influence_map,
         }
     }
 
@@ -67,7 +85,6 @@ impl Bot {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ai::{AiType, HeuristicAI};
     use events::events::Event;
 
     #[test]
@@ -76,9 +93,8 @@ mod tests {
         let filter = EventFilter::new(|e| matches!(e, Event::Bot(_)));
         let (_id, rx) = bus.subscribe_with_filter(Some(filter));
         let bot = Bot::new(
-            BotConfig::new("b", AiType::Heuristic),
+            BotConfig::new("b", crate::ai::AiType::Heuristic),
             Arc::clone(&bus),
-            Box::new(HeuristicAI),
         );
         let handle = std::thread::spawn(move || bot.run());
         std::thread::sleep(std::time::Duration::from_millis(10));

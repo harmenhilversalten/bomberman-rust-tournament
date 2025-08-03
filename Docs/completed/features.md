@@ -50,3 +50,4 @@ As new backlog features are completed, list them below with a reference to the b
 - RL environment and training utilities with replay buffers ([Backlog #28](../backlog/completed.md#28-rl-crate-%E2%80%93-environment-and-training)).
 - Engine integration of feature crates with event-driven flow ([Backlog #29](../backlog/completed.md#29-engine-integration-of-feature-crates)).
 - Bot decision loop connected to engine via event bus ([Backlog #30](../backlog/completed.md#30-connect-bot-decision-loop-to-engine)).
+- AI components integrated with bot kernel for goal-driven decisions ([Backlog #31](../backlog/completed.md#31-integrate-ai-components-goals-path-influence-with-bot-kernel)).
