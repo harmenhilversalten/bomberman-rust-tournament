@@ -1,156 +1,208 @@
+mod game_session;
+mod registry;
+mod scheduler;
+mod scoring;
+
+use game_session::GameSession;
+use registry::BotRegistry;
+use scheduler::GameScheduler;
+use scoring::{BotScore, ScoreTracker};
+
+use crate::{config::TournamentConfig, config::UnifiedBotConfig as BotConfig, SystemHandle};
+use events::events::bot_events::BotId;
+use std::collections::HashMap;
 use std::time::Duration;
 
-use rand::Rng;
-
-use crate::{
-    bot::{Bot, BotConstructor},
-    game,
-};
-
-// This file contains the code for the tournament logic.
-// Objectives:
-// - Implement a tournament system that allows bots to compete against each other.
-// - Ensure that the tournament is fair and balanced.
-// - Provide a way to track the results of the tournament.
-//
-#[derive(Debug, Clone, Copy)]
-pub struct Score {
-    pub wins: usize,
-    pub losses: usize,
-    pub total_games: usize,
+#[derive(Debug, Clone)]
+pub struct GameResult {
+    pub winner: BotId,
+    pub participants: Vec<BotId>,
+    pub survival_times: HashMap<BotId, Duration>,
+    pub destruction_points: HashMap<BotId, u32>,
+    pub powerups_collected: HashMap<BotId, u32>,
 }
 
-pub struct BotScores {
-    pub scores: Vec<(String, Score)>,
-    pub total_games: usize,
+impl GameResult {
+    pub fn new(participants: Vec<BotId>, winner: BotId) -> Self {
+        Self {
+            winner,
+            participants,
+            survival_times: HashMap::new(),
+            destruction_points: HashMap::new(),
+            powerups_collected: HashMap::new(),
+        }
+    }
 }
 
-impl BotScores {
+#[derive(Debug, Clone)]
+pub struct ResultAggregator {
+    pub results: Vec<GameResult>,
+}
+
+impl ResultAggregator {
     pub fn new() -> Self {
-        BotScores {
-            scores: Vec::new(),
-            total_games: 0,
+        Self {
+            results: Vec::new(),
         }
     }
 
-    pub fn add_score(&mut self, botname: String, score_to_add: Score) {
-        // check if bot already exists in scores
-        if let Some((_, score)) = self.scores.iter_mut().find(|(name, _)| name == &botname) {
-            score.wins += score_to_add.wins;
-            score.losses += score_to_add.losses;
-            score.total_games += score_to_add.total_games;
-        } else {
-            self.scores.push((botname, score_to_add));
-        }
-    }
-
-    pub fn merge_with(&mut self, other: &BotScores) {
-        for (botname, score) in other.scores.iter() {
-            self.add_score(botname.clone(), score.clone());
-        }
-        self.total_games += other.total_games;
+    pub fn add_results(&mut self, res: Vec<GameResult>) {
+        self.results.extend(res);
     }
 }
 
-use std::sync::{Arc, Mutex};
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TournamentState {
+    Idle,
+    Registration,
+    Running,
+    Completed,
+}
 
-pub fn run_tournament(
-    bot_constructors: &Vec<BotConstructor>,
-    bot_configs: &Vec<(usize, String)>,
-    round_counter: Option<(usize, Arc<Mutex<Vec<usize>>>)>,
-) -> BotScores {
-    // Implement the tournament logic here
-    //
-    let start_time = std::time::Instant::now();
-    let time_limit = Duration::from_secs(10);
+#[derive(Debug, thiserror::Error)]
+pub enum TournamentError {
+    #[error("invalid state for operation")]
+    InvalidState,
+    #[error("registration closed")]
+    RegistrationClosed,
+    #[error("game failed: {0}")]
+    GameFailed(String),
+}
 
-    let mut rand = rand::rng();
-    let botcount = bot_configs.len();
+pub struct TournamentResults {
+    pub rankings: Vec<(BotId, BotScore, u32)>,
+}
 
-    let mut bot_scores = BotScores::new();
+pub struct TournamentManager {
+    _config: TournamentConfig,
+    state: TournamentState,
+    bot_registry: BotRegistry,
+    game_scheduler: GameScheduler,
+    score_tracker: ScoreTracker,
+    result_aggregator: ResultAggregator,
+    system_handle: SystemHandle,
+}
 
-    let mut games_played = 0;
-
-    loop {
-        games_played += 1;
-
-        // Update round counter if provided
-        if let Some((thread_idx, ref counter)) = round_counter {
-            let mut vec = counter.lock().unwrap();
-            if thread_idx < vec.len() {
-                vec[thread_idx] = games_played;
-            }
-        }
-
-        // break if time limit is reached
-        if start_time.elapsed() >= time_limit {
-            break;
-        }
-
-        let idx1 = rand.random_range(0..botcount);
-        let mut idx2 = rand.random_range(0..botcount);
-        while idx2 == idx1 {
-            idx2 = rand.random_range(0..botcount);
-        }
-        // pick two bots at random
-        let bot1 = bot_constructors[bot_configs[idx1].0](&bot_configs[idx1].1);
-        let bot2 = bot_constructors[bot_configs[idx2].0](&bot_configs[idx2].1);
-
-        let game_bots: Vec<Box<dyn Bot>> = vec![bot1, bot2];
-
-        let bot_names = game_bots.iter().map(|bot| bot.name()).collect::<Vec<_>>();
-        // run a game and update scores
-        let scores = run_game(game_bots);
-        for (bot, score) in bot_names.iter().zip(scores) {
-            bot_scores.add_score(bot.clone(), score);
+impl TournamentManager {
+    pub fn new(config: TournamentConfig, system_handle: SystemHandle) -> Self {
+        let scheduler = GameScheduler::new(config.format.clone());
+        let tracker = ScoreTracker::new(config.scoring_system.clone());
+        Self {
+            _config: config,
+            state: TournamentState::Idle,
+            bot_registry: BotRegistry::default(),
+            game_scheduler: scheduler,
+            score_tracker: tracker,
+            result_aggregator: ResultAggregator::new(),
+            system_handle,
         }
     }
 
-    // Print the final scores
-    // println!("Final Scores after {} games:", games_played);
-    // for (bot, score) in bot_scores.scores {
-    //     println!("{}: {:?}", bot, score);
-    // }
-    bot_scores.total_games = games_played;
-    bot_scores
-}
+    pub async fn start_registration(&mut self) -> Result<(), TournamentError> {
+        if self.state != TournamentState::Idle {
+            return Err(TournamentError::InvalidState);
+        }
+        self.state = TournamentState::Registration;
+        Ok(())
+    }
 
-/// Run a game between two bots
-/// The bots must already be instantiated and ready to play.
-fn run_game(bots: Vec<Box<dyn Bot>>) -> Vec<Score> {
-    // Implement the game logic here
-    let botnames = bots.iter().map(|bot| bot.name()).collect::<Vec<_>>();
-    // Bots zijn al vers, geen clone nodig
-    let gameresult = game::Game::build(11, 11, bots).run();
-    // in tournament mode, only the winner is tracked, the other players get a loss
-    botnames
-        .iter()
-        .map(|botname| Score {
-            wins: if gameresult.winner == *botname { 1 } else { 0 },
-            losses: if gameresult.winner == *botname { 0 } else { 1 },
-            total_games: 1,
-        })
-        .collect()
+    pub async fn register_bot(&mut self, bot_config: BotConfig) -> Result<BotId, TournamentError> {
+        if self.state != TournamentState::Registration {
+            return Err(TournamentError::RegistrationClosed);
+        }
+        self.bot_registry.register_bot(bot_config)
+    }
+
+    pub async fn start_tournament(&mut self) -> Result<(), TournamentError> {
+        if self.state != TournamentState::Registration {
+            return Err(TournamentError::InvalidState);
+        }
+        self.state = TournamentState::Running;
+        Ok(())
+    }
+
+    pub fn has_next_round(&self) -> bool {
+        self.game_scheduler.has_next_round()
+    }
+
+    pub async fn run_next_round(&mut self) -> Result<Vec<GameResult>, TournamentError> {
+        if self.state != TournamentState::Running {
+            return Err(TournamentError::InvalidState);
+        }
+        let bots = self.bot_registry.get_bot_ids();
+        let matches = self.game_scheduler.schedule_next_round(&bots);
+        let mut results = Vec::new();
+        for m in matches {
+            let mut session = GameSession::new(m.id, m.participants.clone());
+            session.start(&self.system_handle).await?;
+            let res = session.wait_for_completion().await?;
+            results.push(res);
+        }
+        self.score_tracker.update_scores(&results);
+        self.result_aggregator.add_results(results.clone());
+        Ok(results)
+    }
+
+    pub async fn finalize_tournament(&mut self) -> Result<TournamentResults, TournamentError> {
+        if self.state != TournamentState::Running {
+            return Err(TournamentError::InvalidState);
+        }
+        self.state = TournamentState::Completed;
+        let rankings = self.score_tracker.get_rankings();
+        Ok(TournamentResults { rankings })
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    // use crate::bot::available_bots;
+    use super::*;
+    use crate::{config::*, engine::Engine};
+    use events::bus::EventBus;
+    use std::sync::{Arc, RwLock};
 
-    // use super::*;
+    fn dummy_handle() -> SystemHandle {
+        let cfg = EngineConfig::default();
+        let grid = Arc::new(RwLock::new(state::GameGrid::new(5, 5)));
+        let (engine, _) = Engine::with_components(cfg, grid, Arc::new(EventBus::new()));
+        SystemHandle::new(Arc::new(EventBus::new()), engine, 0, None)
+    }
 
-    // #[test]
-    // fn test_run_game() {
-    //     let bot_constructors = available_bots();
-
-    //     let bot1 = bot_constructors.get(1).unwrap()("Bot1");
-    //     let bot2 = bot_constructors.get(1).unwrap()("Bot2");
-
-    //     let bots = vec![bot1, bot2];
-
-    //     let scores = run_game(bots.iter().collect());
-    //     assert_eq!(scores.len(), 2);
-    //     assert_eq!(scores[0].wins + scores[0].losses, 1);
-    //     assert_eq!(scores[1].wins + scores[1].losses, 1);
-    // }
+    #[test]
+    fn full_flow() {
+        let config = TournamentConfig {
+            name: "test".into(),
+            format: TournamentFormat::RoundRobin { total_rounds: 1 },
+            max_concurrent_games: 1,
+            game_timeout_seconds: 60,
+            scoring_system: ScoringSystem::WinLoss {
+                win_points: 1,
+                loss_points: 0,
+            },
+            registration_timeout_seconds: 1,
+            allow_remote_bots: false,
+            persist_results: false,
+        };
+        let handle = dummy_handle();
+        let mut tm = TournamentManager::new(config, handle);
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            tm.start_registration().await.unwrap();
+            let bot_cfg = BotConfig {
+                name: "b1".into(),
+                ai_type: "Heuristic".into(),
+                rl_mode: false,
+                rl_model_path: None,
+                decision_timeout_ms: 10,
+            };
+            tm.register_bot(bot_cfg.clone()).await.unwrap();
+            tm.register_bot(bot_cfg).await.unwrap();
+            tm.start_tournament().await.unwrap();
+            while tm.has_next_round() {
+                let res = tm.run_next_round().await.unwrap();
+                assert!(!res.is_empty());
+            }
+            let finals = tm.finalize_tournament().await.unwrap();
+            assert_eq!(finals.rankings.len(), 2);
+        });
+    }
 }

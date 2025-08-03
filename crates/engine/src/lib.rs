@@ -9,6 +9,7 @@ pub mod map;
 pub mod shrink;
 pub mod simulation;
 pub mod systems;
+pub mod tournament;
 
 use std::sync::{Arc, RwLock};
 
@@ -24,6 +25,7 @@ pub use config::{
 pub use engine::{Engine, TaskScheduler};
 pub use simulation::{DeterminismChecker, Replay, ReplayRecorder};
 pub use systems::System;
+pub use tournament::TournamentManager;
 
 /// Errors that may occur during system initialization.
 #[derive(Debug, thiserror::Error)]
@@ -72,6 +74,11 @@ impl SystemHandle {
     /// Check if a tournament is configured.
     pub fn has_tournament(&self) -> bool {
         self.tournament.is_some()
+    }
+
+    /// Access tournament configuration if present.
+    pub fn tournament_config(&self) -> Option<&TournamentConfig> {
+        self.tournament.as_ref()
     }
 
     /// Access the event bus.
