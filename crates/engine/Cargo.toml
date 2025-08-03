@@ -21,8 +21,13 @@ env_logger = "0.11"
 
 [dev-dependencies]
 tempfile = { workspace = true }
+criterion = { workspace = true }
+tokio-test = { workspace = true }
+mockall = { workspace = true }
+proptest = { workspace = true }
+test_utils = { path = "../test_utils" }
 
 [features]
 default = ["tournament"]
 tournament = []
-rl = ["bot/rl"]
+rl = []

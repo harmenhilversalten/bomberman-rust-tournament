@@ -4,13 +4,12 @@ mod heuristic_ai;
 mod pipeline;
 mod planning_ai;
 mod reactive_ai;
-mod rl_ai;
+// Reinforcement learning AI is not yet supported in this build.
 
 pub use heuristic_ai::HeuristicAI;
 pub use pipeline::AIDecisionPipeline;
 pub use planning_ai::PlanningAI;
 pub use reactive_ai::ReactiveAI;
-pub use rl_ai::RLAI;
 
 /// Available AI strategy types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
