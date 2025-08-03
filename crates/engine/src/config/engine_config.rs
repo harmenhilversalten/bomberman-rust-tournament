@@ -1,8 +1,8 @@
-use std::{error::Error, fmt, fs, path::Path};
+use std::{fs, path::Path};
 
 use serde::{Deserialize, Serialize};
 
-use super::GameRules;
+use super::{ConfigError, GameRules};
 
 /// Configuration for the game engine.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -31,38 +31,23 @@ impl Default for EngineConfig {
 impl EngineConfig {
     /// Load configuration from a JSON file.
     pub fn from_path<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
-        let data = fs::read_to_string(path).map_err(ConfigError::Io)?;
-        serde_json::from_str(&data).map_err(ConfigError::Parse)
+        let data = fs::read_to_string(path)?;
+        serde_json::from_str(&data).map_err(ConfigError::Json)
     }
 
     /// Attempt to load configuration from a file, falling back to defaults.
     pub fn load_or_default<P: AsRef<Path>>(path: P) -> Self {
         Self::from_path(path).unwrap_or_default()
     }
-}
 
-/// Errors that may occur while loading configuration.
-#[derive(Debug)]
-pub enum ConfigError {
-    Io(std::io::Error),
-    Parse(serde_json::Error),
-}
-
-impl fmt::Display for ConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Io(e) => write!(f, "I/O error: {}", e),
-            Self::Parse(e) => write!(f, "Parse error: {}", e),
+    /// Validate the engine configuration.
+    pub fn validate(&self) -> Result<(), ConfigError> {
+        if self.width == 0 || self.height == 0 {
+            return Err(ConfigError::Invalid(
+                "grid dimensions must be greater than zero".into(),
+            ));
         }
-    }
-}
-
-impl Error for ConfigError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::Io(e) => Some(e),
-            Self::Parse(e) => Some(e),
-        }
+        Ok(())
     }
 }
 
