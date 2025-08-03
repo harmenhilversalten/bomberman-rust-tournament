@@ -6,6 +6,7 @@ use rl::{Policy, Value};
 use state::grid::GridDelta;
 
 /// Reinforcement learning based AI implementation.
+#[allow(missing_docs)]
 pub struct RLAI {
     pub policy: Arc<Mutex<dyn Policy>>,
     pub value_network: Option<Arc<dyn Value>>,
@@ -81,6 +82,7 @@ mod tests {
     }
 
     impl RLAI {
+        #[allow(missing_docs)]
         pub fn test_new() -> Self {
             let policy = Arc::new(Mutex::new(StubPolicy)) as Arc<Mutex<dyn Policy>>;
             Self::new(policy, None, 0.0)

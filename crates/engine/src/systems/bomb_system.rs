@@ -1,23 +1,29 @@
 use std::sync::{Arc, RwLock};
 
-use bombs::bomb::entity::{Bomb, BombId};
+use bombs::{BombLogic, ChainReactionHandler, ExplosionCalculator};
 use events::{
     bus::EventBus,
-    events::{Event, GameEvent},
+    events::{BombEvent, Event},
 };
-use state::grid::{GameGrid, GridDelta, Tile};
+use state::grid::{GameGrid, GridDelta};
 
 use super::System;
 
-/// Manages bomb placement and updates.
+/// Manages bombs using logic from the `bombs` crate.
 pub struct BombSystem {
-    next_id: u32,
+    bomb_logic: BombLogic,
+    explosion_calc: ExplosionCalculator,
+    chain_handler: ChainReactionHandler,
 }
 
 impl BombSystem {
-    /// Create a new `BombSystem`.
+    /// Create a new [`BombSystem`].
     pub fn new() -> Self {
-        Self { next_id: 0 }
+        Self {
+            bomb_logic: BombLogic::new(),
+            explosion_calc: ExplosionCalculator::new(),
+            chain_handler: ChainReactionHandler::new(),
+        }
     }
 }
 
@@ -26,19 +32,40 @@ impl System for BombSystem {
         "bomb"
     }
 
-    fn run(&mut self, _grid: &Arc<RwLock<GameGrid>>, events: &EventBus) -> Option<GridDelta> {
-        let bomb = Bomb::new(BombId(self.next_id), 0, (0, 0), 3, 1);
-        self.next_id += 1;
-        events.broadcast(Event::Game(GameEvent::BombPlaced {
-            entity_id: bomb.owner,
-            bomb_id: bomb.id.0 as usize,
-            position: bomb.position,
-            power: bomb.power,
-        }));
-        Some(GridDelta::SetTile {
-            x: 1,
-            y: 0,
-            tile: Tile::SoftCrate,
-        })
+    fn run(&mut self, grid: &Arc<RwLock<GameGrid>>, events: &EventBus) -> Option<GridDelta> {
+        let mut grid = grid.write().unwrap();
+        let delta = self.bomb_logic.update_bombs(&mut grid);
+
+        let explosions = self.explosion_calc.calculate_explosions(&grid);
+        let chain_reactions = self
+            .chain_handler
+            .process_chain_reactions(explosions.clone(), &mut grid);
+
+        for explosion in explosions {
+            events.broadcast(Event::bomb(BombEvent::Exploded {
+                position: explosion.position,
+                radius: explosion.radius,
+            }));
+        }
+        for reaction in chain_reactions {
+            events.broadcast(Event::bomb(BombEvent::ChainReaction {
+                positions: reaction.positions,
+            }));
+        }
+        Some(delta)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn system_broadcasts_events() {
+        let mut system = BombSystem::new();
+        let grid = Arc::new(RwLock::new(GameGrid::new(1, 1)));
+        let bus = EventBus::new();
+        system.run(&grid, &bus);
+        // no assertion on content, just ensure call succeeds
     }
 }

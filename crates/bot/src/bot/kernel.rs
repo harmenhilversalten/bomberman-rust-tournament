@@ -28,7 +28,9 @@ pub struct Bot {
     #[allow(dead_code)]
     influence_map: Arc<Mutex<InfluenceMap>>,
     rl_policy: Option<Arc<Mutex<dyn Policy>>>,
+    #[allow(dead_code)]
     value_network: Option<Arc<dyn Value>>,
+    #[allow(dead_code)]
     reward_buffer: Vec<RewardRecord>,
 }
 
@@ -39,38 +41,39 @@ impl Bot {
         let pathfinder = Arc::new(Pathfinder::new());
         let influence_map = Arc::new(Mutex::new(InfluenceMap::new(1, 1)));
 
-        let (ai, rl_policy, value_network) = if config.rl_mode {
-            match config
-                .rl_model_path
-                .as_ref()
-                .and_then(|p| TorchPolicy::load(std::path::Path::new(p), 4, 2).ok())
-            {
-                Some(policy) => {
-                    let policy_arc: Arc<Mutex<dyn Policy>> = Arc::new(Mutex::new(policy));
-                    let ai = Box::new(RLAI::new(
-                        Arc::clone(&policy_arc),
-                        None,
-                        config.rl_exploration_rate,
-                    ));
-                    (ai, Some(policy_arc), None)
+        let (ai, rl_policy, value_network) =
+            if config.rl_mode {
+                match config
+                    .rl_model_path
+                    .as_ref()
+                    .and_then(|p| TorchPolicy::load(std::path::Path::new(p), 4, 2).ok())
+                {
+                    Some(policy) => {
+                        let policy_arc: Arc<Mutex<dyn Policy>> = Arc::new(Mutex::new(policy));
+                        let ai: Box<dyn DecisionMaker<GridDelta, BotDecision>> = Box::new(
+                            RLAI::new(Arc::clone(&policy_arc), None, config.rl_exploration_rate),
+                        );
+                        (ai, Some(policy_arc), None)
+                    }
+                    None => {
+                        let ai: Box<dyn DecisionMaker<GridDelta, BotDecision>> =
+                            Box::new(AIDecisionPipeline::new(
+                                Arc::clone(&goal_manager),
+                                Arc::clone(&pathfinder),
+                                Arc::clone(&influence_map),
+                            ));
+                        (ai, None, None)
+                    }
                 }
-                None => {
-                    let ai = Box::new(AIDecisionPipeline::new(
+            } else {
+                let ai: Box<dyn DecisionMaker<GridDelta, BotDecision>> =
+                    Box::new(AIDecisionPipeline::new(
                         Arc::clone(&goal_manager),
                         Arc::clone(&pathfinder),
                         Arc::clone(&influence_map),
                     ));
-                    (ai, None, None)
-                }
-            }
-        } else {
-            let ai = Box::new(AIDecisionPipeline::new(
-                Arc::clone(&goal_manager),
-                Arc::clone(&pathfinder),
-                Arc::clone(&influence_map),
-            ));
-            (ai, None, None)
-        };
+                (ai, None, None)
+            };
 
         Self {
             config,

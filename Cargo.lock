@@ -107,6 +107,7 @@ dependencies = [
  "petgraph",
  "proptest",
  "serde",
+ "state",
  "thiserror",
 ]
 
@@ -114,6 +115,7 @@ dependencies = [
 name = "bot"
 version = "0.1.0"
 dependencies = [
+ "bombs",
  "crossbeam",
  "events",
  "goals",

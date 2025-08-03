@@ -140,6 +140,19 @@ impl GameGrid {
         self.bombs.len() - 1
     }
 
+    /// Check if a bomb can be placed at `position`.
+    pub fn can_place_bomb(&self, position: (u16, u16)) -> bool {
+        matches!(
+            self.tile(position.0 as usize, position.1 as usize),
+            Some(Tile::Empty)
+        )
+    }
+
+    /// Place a bomb at `position` if possible.
+    pub fn place_bomb(&mut self, position: (u16, u16)) {
+        self.add_bomb(Bomb::new(0, position, 3, 1));
+    }
+
     /// Adds an agent to the grid and returns its identifier.
     pub fn add_agent(&mut self, agent: AgentState) -> usize {
         self.agents.push(agent);
@@ -313,5 +326,18 @@ mod tests {
             delta.tiles[0],
             Tile::Wall.to_u8() as f32 - Tile::Empty.to_u8() as f32
         );
+    }
+
+    #[test]
+    fn can_place_bomb_checks_empty_tile() {
+        let grid = GameGrid::new(1, 1);
+        assert!(grid.can_place_bomb((0, 0)));
+    }
+
+    #[test]
+    fn place_bomb_adds_bomb() {
+        let mut grid = GameGrid::new(1, 1);
+        grid.place_bomb((0, 0));
+        assert_eq!(grid.bombs().len(), 1);
     }
 }

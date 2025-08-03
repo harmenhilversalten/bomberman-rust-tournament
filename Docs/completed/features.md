@@ -52,3 +52,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Bot decision loop connected to engine via event bus ([Backlog #30](../backlog/completed.md#30-connect-bot-decision-loop-to-engine)).
 - AI components integrated with bot kernel for goal-driven decisions ([Backlog #31](../backlog/completed.md#31-integrate-ai-components-goals-path-influence-with-bot-kernel)).
 - Reinforcement learning integration enabling bots to load policies and compute rewards ([Backlog #32](../backlog/completed.md#32-implement-reinforcement-learning-integration)).
+- Bomb system integrated across engine and bot with event broadcasting ([Backlog #33](../backlog/completed.md#33-implement-bomb-system-integration)).

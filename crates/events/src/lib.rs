@@ -9,6 +9,6 @@ pub mod queue;
 pub mod serialization;
 
 pub use bus::{EventBus, EventFilter, SubscriberId};
-pub use events::{BotDecision, BotEvent, Event, GameEvent, SystemEvent};
+pub use events::{BombEvent, BotDecision, BotEvent, Event, GameEvent, PowerUpType, SystemEvent};
 pub use queue::EventPriority;
 pub use serialization::{Transition, TransitionRecorder, decoder, encoder};
