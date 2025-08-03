@@ -53,7 +53,7 @@ mod tests {
         engine.add_system(Box::new(ExplosionSystem::new()));
         engine.add_system(Box::new(PowerupSystem::new()));
 
-        engine.tick();
+        engine.tick().unwrap();
 
         let grid_arc = engine.grid();
         let grid = grid_arc.read().unwrap();

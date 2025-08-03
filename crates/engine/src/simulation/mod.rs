@@ -19,7 +19,7 @@ mod tests {
         engine.add_system(Box::new(MovementSystem::new()));
         engine.start_replay_recording();
         for _ in 0..3 {
-            engine.tick();
+            engine.tick().unwrap();
         }
         let replay = engine.stop_replay_recording();
         let recorded_hashes = engine.determinism_hashes().to_vec();

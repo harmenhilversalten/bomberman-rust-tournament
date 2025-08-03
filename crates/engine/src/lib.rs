@@ -22,6 +22,7 @@ pub use config::{
     AIConfig, BombConfig, ConfigError, EngineConfig, EventBusConfig, GameRules, LoggingConfig,
     RLConfig, TournamentConfig, UnifiedBotConfig, UnifiedConfig,
 };
+pub use engine::game_engine::EngineError;
 pub use engine::{Engine, TaskScheduler};
 pub use simulation::{DeterminismChecker, Replay, ReplayRecorder};
 pub use systems::System;
