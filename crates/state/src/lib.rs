@@ -10,7 +10,7 @@ pub mod serialization;
 pub mod state;
 
 pub use components::{AgentState, Bomb};
-pub use grid::{GameGrid, Tile};
+pub use grid::{GameGrid, ObservationDelta, Tile};
 pub use serialization::{Format, SerializationError, decoder, encoder};
 pub use state::{GameState, SnapshotView};
 
