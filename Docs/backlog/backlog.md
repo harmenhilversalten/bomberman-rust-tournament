@@ -94,30 +94,6 @@ Completed backlog items 1-29 are archived in [completed.md](completed.md).
 
 ---
 
-## BPI-009: Add Missing System Dependencies
-* **Summary**: Declare every missing dependency, configure feature flags, eliminate circular references, and align versions across the workspace.
-* **Requirements**
-  * All system dependencies must be explicitly declared
-  * Dependency versions must be compatible
-  * Feature flags must be properly configured
-  * Circular dependencies must be resolved
-* **Files that need changing**
-  * `crates/engine/Cargo.toml` – Add missing dependencies
-  * `crates/bot/Cargo.toml` – Add missing dependencies
-  * `crates/goals/Cargo.toml` – Add missing dependencies
-  * `crates/path/Cargo.toml` – Add missing dependencies
-  * `crates/influence/Cargo.toml` – Add missing dependencies
-  * `crates/rl/Cargo.toml` – Add missing dependencies
-  * `crates/bombs/Cargo.toml` – Add missing dependencies
-  * `Cargo.toml` (workspace) – Ensure version consistency
-* **What needs to change**
-  * Engine must depend on `events`, `bot`, `bombs` crates
-  * Bot must depend on `goals`, `path`, `influence`, `rl` crates
-  * All AI crates must depend on `events` and `state`
-  * Workspace dependencies must be consistent
-* **Prompt**: “Add missing system dependencies to all crates. Ensure engine depends on events, bot, and bombs; bot depends on goals, path, influence, and rl; and all AI crates depend on events and state. Resolve any circular dependencies.”
-
----
 
 ## BPI-010: Implement Comprehensive Testing Integration
 * **Summary**: Build a test suite with integration tests, mocks, edge-case scenarios, and performance benchmarks that cover every crate interaction.

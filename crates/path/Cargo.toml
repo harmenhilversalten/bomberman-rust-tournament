@@ -5,6 +5,13 @@ edition = "2024"
 
 [dependencies]
 influence = { path = "../influence" }
+events = { path = "../events" }
+state = { path = "../state" }
+serde = { workspace = true, features = ["derive"] }
+thiserror = { workspace = true }
+log = { workspace = true }
+pathfinding = "4.0"
+priority-queue = "1.3"
 
 [dev-dependencies]
 criterion = { workspace = true }

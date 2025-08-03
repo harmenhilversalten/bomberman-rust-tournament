@@ -4,9 +4,18 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-tch = { workspace = true }
-rand = { workspace = true }
+events = { path = "../events" }
+state = { path = "../state" }
+serde = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
+log = { workspace = true }
+tch = { workspace = true }
+ndarray = { workspace = true }
+rand = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+
+[features]
+default = []
+torch = []
