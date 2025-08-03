@@ -10,8 +10,14 @@ state = { path = "../state" }
 tokio = { workspace = true, features = ["sync"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
+toml = "0.8"
 events = { path = "../events" }
 bombs = { path = "../bombs" }
 crossbeam = { workspace = true }
 bot = { path = "../bot" }
 thiserror = { workspace = true }
+log = "0.4"
+env_logger = "0.11"
+
+[dev-dependencies]
+tempfile = { workspace = true }
