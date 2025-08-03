@@ -266,4 +266,13 @@ This archive lists backlog items that have been completed and moved out of the a
   - Engine bomb system uses logic from the `bombs` crate
   - Bot actions include bomb placement commands
   - Bomb events are published via the event bus
-- **Prompt**: "Integrate the bombs crate with the engine and bot systems. Connect the bomb system to use logic from the bombs crate, add bomb actions to bot decision making, and ensure bomb events are broadcast via the event bus."
+  - **Prompt**: "Integrate the bombs crate with the engine and bot systems. Connect the bomb system to use logic from the bombs crate, add bomb actions to bot decision making, and ensure bomb events are broadcast via the event bus."
+
+## 34. Add Missing System Dependencies
+- **Summary**: Declare every missing dependency, configure feature flags, eliminate circular references, and align versions across the workspace.
+- **Requirements**:
+  - All system dependencies are explicitly declared
+  - Dependency versions are compatible
+  - Feature flags are properly configured
+  - Circular dependencies are resolved
+- **Prompt**: "Add missing system dependencies to all crates. Ensure engine depends on events, bot, and bombs; bot depends on goals, path, influence, and rl; and all AI crates depend on events and state. Resolve any circular dependencies."

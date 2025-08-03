@@ -1,4 +1,4 @@
-use log::{info, Level};
+use log::{Level, info};
 use thiserror::Error;
 
 #[derive(Debug)]

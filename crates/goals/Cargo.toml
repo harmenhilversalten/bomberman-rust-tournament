@@ -8,4 +8,5 @@ state = { path = "../state" }
 events = { path = "../events" }
 thiserror = { workspace = true }
 influence = { path = "../influence" }
-path = { path = "../path" }
+serde = { workspace = true, features = ["derive"] }
+log = { workspace = true }

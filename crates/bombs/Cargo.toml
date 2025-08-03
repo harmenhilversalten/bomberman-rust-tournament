@@ -8,6 +8,8 @@ petgraph = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 state = { path = "../state" }
+events = { path = "../events" }
+log = { workspace = true }
 
 [dev-dependencies]
 proptest = { workspace = true }

@@ -6,6 +6,12 @@ pub struct HealthChecker {
     components: HashMap<String, Box<dyn HealthCheck>>,
 }
 
+impl Default for HealthChecker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub trait HealthCheck: Send + Sync {
     fn name(&self) -> &str;
     fn check_health(&self) -> HealthStatus;
