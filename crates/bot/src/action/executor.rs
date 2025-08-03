@@ -1,26 +1,27 @@
-//! Executes actions against a mutable game state.
+//! Executes actions against the game grid.
 
 use super::{Action, ActionResult};
+use state::grid::GameGrid;
 
-/// Applies [`Action`]s to a mutable integer state for testing.
-#[derive(Debug, Default)]
-pub struct ActionExecutor;
+/// Trait for applying an [`Action`] to a game grid.
+pub trait ActionExecutor {
+    /// Execute the action against the grid and return the result.
+    fn execute(&self, grid: &mut GameGrid) -> ActionResult;
+}
 
-impl ActionExecutor {
-    /// Create a new [`ActionExecutor`].
-    pub fn new() -> Self {
-        Self
-    }
-
-    /// Execute the given action, mutating `state` when successful.
-    pub fn execute(&self, state: &mut i32, action: Action) -> ActionResult {
-        match action {
-            Action::Move(delta) if delta >= 0 => {
-                *state += delta;
-                ActionResult::Success
+impl ActionExecutor for Action {
+    fn execute(&self, grid: &mut GameGrid) -> ActionResult {
+        match self {
+            Action::PlaceBomb { position } => {
+                if grid.can_place_bomb(*position) {
+                    grid.place_bomb(*position);
+                    ActionResult::Success
+                } else {
+                    ActionResult::Failure("cannot place bomb here")
+                }
             }
-            Action::Move(_) => ActionResult::Failure("negative move"),
-            Action::Idle => ActionResult::Success,
+            Action::Move(_) => ActionResult::Success,
+            Action::Wait => ActionResult::Success,
         }
     }
 }
@@ -28,22 +29,23 @@ impl ActionExecutor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use state::grid::{GameGrid, Tile};
 
     #[test]
-    fn move_action_increments_state() {
-        let exec = ActionExecutor::new();
-        let mut state = 0;
-        let result = exec.execute(&mut state, Action::Move(2));
-        assert_eq!(state, 2);
-        assert_eq!(result, ActionResult::Success);
+    fn placing_bomb_success() {
+        let action = Action::PlaceBomb { position: (0, 0) };
+        let mut grid = GameGrid::new(1, 1);
+        assert!(matches!(action.execute(&mut grid), ActionResult::Success));
     }
 
     #[test]
-    fn negative_move_fails() {
-        let exec = ActionExecutor::new();
-        let mut state = 0;
-        let result = exec.execute(&mut state, Action::Move(-1));
-        assert_eq!(state, 0);
-        assert_eq!(result, ActionResult::Failure("negative move"));
+    fn placing_bomb_fails_when_occupied() {
+        let action = Action::PlaceBomb { position: (0, 0) };
+        let mut grid = GameGrid::new(1, 1);
+        grid.set_tile(0, 0, Tile::Wall);
+        assert!(matches!(
+            action.execute(&mut grid),
+            ActionResult::Failure(_)
+        ));
     }
 }

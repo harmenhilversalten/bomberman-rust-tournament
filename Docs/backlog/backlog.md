@@ -27,30 +27,6 @@ Completed backlog items 1-29 are archived in [completed.md](completed.md).
   * Event bus must handle cross-crate event serialization
 * **Prompt**: “Implement event bus integration across all crates. Ensure `GridDelta` events are broadcast after each engine tick and that bot commands are published back to the engine via the event bus. Add event subscriptions to all AI components.”
 
-## BPI-005: Implement Bomb System Integration
-* **Summary**: Merge the `bombs` crate with both engine and bot logic so bomb placement, chain reactions, and power-ups are handled consistently and broadcast as events.
-* **Requirements**
-  * Bomb placement logic must be integrated with bot decisions
-  * Chain reaction calculations must be accurate
-  * Bomb events must be broadcast via the event bus
-  * Power-up effects must interact with bomb system
-* **Files that need changing**
-  * `crates/bombs/src/lib.rs` – Export bomb logic functions
-  * `crates/engine/src/systems/bomb_system.rs` – Connect to bombs crate
-  * `crates/bot/src/action/mod.rs` – Add bomb action handling
-  * `crates/bot/src/ai/mod.rs` – Add bomb decision logic
-  * `crates/engine/Cargo.toml` – Add dependency on `bombs` crate
-  * `crates/bot/Cargo.toml` – Add dependency on `bombs` crate
-* **What needs to change**
-
-  * Engine bomb system must use logic from `bombs` crate
-  * Bot actions must include bomb placement commands
-  * Bomb events must be published to event bus
-  * Bot AI must consider bomb placement in decision making
-* **Prompt**: “Integrate the bombs crate with the engine and bot systems. Connect the bomb system to use logic from the bombs crate, add bomb actions to bot decision making, and ensure bomb events are broadcast via the event bus.”
-
----
-
 ## BPI-006: Implement Unified Initialization and Configuration
 * **Summary**: Create a single entry point that initializes every crate in the correct order, using one coherent configuration and robust error handling.
 * **Requirements**

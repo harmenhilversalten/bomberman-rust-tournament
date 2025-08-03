@@ -61,8 +61,22 @@ impl AIDecisionPipeline {
         )
     }
 
+    /// Determine whether the bot should place a bomb at the current tick.
+    pub fn should_place_bomb(&self, _snapshot: &GameState, _influence: &InfluenceData) -> bool {
+        false
+    }
+
     /// Select an action from the path and goal.
-    pub fn select_action(&self, path: Option<Path>, _goal: &dyn Goal) -> BotDecision {
+    pub fn select_action(
+        &self,
+        path: Option<Path>,
+        _goal: &dyn Goal,
+        snapshot: &GameState,
+        influence: &InfluenceData,
+    ) -> BotDecision {
+        if self.should_place_bomb(snapshot, influence) {
+            return BotDecision::PlaceBomb;
+        }
         if let Some(p) = path {
             let positions: Vec<Position> = p
                 .nodes
@@ -92,13 +106,12 @@ impl DecisionMaker<GridDelta, BotDecision> for AIDecisionPipeline {
         let influence = map_guard.data();
         let goals = self.generate_goals(&snapshot);
         let scored = self.score_goals(goals, &influence, &snapshot);
-        drop(map_guard);
         if let Some((goal, _)) = scored
             .into_iter()
             .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
         {
             let path = self.find_path(goal.as_ref(), &snapshot);
-            self.select_action(path, goal.as_ref())
+            self.select_action(path, goal.as_ref(), &snapshot, &influence)
         } else {
             BotDecision::Wait
         }

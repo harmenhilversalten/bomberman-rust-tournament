@@ -13,6 +13,7 @@ path = { path = "../path" }
 influence = { path = "../influence" }
 rl = { path = "../rl" }
 tch = { workspace = true }
+bombs = { path = "../bombs" }
 
 [dev-dependencies]
 tempfile = { workspace = true }

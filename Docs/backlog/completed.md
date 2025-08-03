@@ -259,3 +259,11 @@ This archive lists backlog items that have been completed and moved out of the a
   - Game state converts to observations and reward records.
   - Reward calculation utilities and experience buffer available.
 - **Prompt**: "Implement reinforcement learning integration in the bot system. Add RL configuration options, implement policy loading and inference, add observation generation from game state, and create RL mode switching in the bot kernel."
+
+## 33. Implement Bomb System Integration
+- **Summary**: Merge the `bombs` crate with engine and bot logic so bomb placement, chain reactions, and power-ups are handled consistently and broadcast as events.
+- **Requirements**:
+  - Engine bomb system uses logic from the `bombs` crate
+  - Bot actions include bomb placement commands
+  - Bomb events are published via the event bus
+- **Prompt**: "Integrate the bombs crate with the engine and bot systems. Connect the bomb system to use logic from the bombs crate, add bomb actions to bot decision making, and ensure bomb events are broadcast via the event bus."

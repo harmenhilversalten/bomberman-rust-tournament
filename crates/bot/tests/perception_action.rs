@@ -1,5 +1,6 @@
 use bot::action::{Action, ActionExecutor, ActionResult};
 use bot::perception::PerceptionSystem;
+use state::grid::GameGrid;
 
 #[test]
 fn perception_system_records_observations() {
@@ -11,10 +12,9 @@ fn perception_system_records_observations() {
 }
 
 #[test]
-fn action_executor_updates_state() {
-    let exec = ActionExecutor::new();
-    let mut state = 0;
-    let res = exec.execute(&mut state, Action::Move(3));
+fn action_executor_places_bomb() {
+    let action = Action::PlaceBomb { position: (0, 0) };
+    let mut grid = GameGrid::new(1, 1);
+    let res = action.execute(&mut grid);
     assert_eq!(res, ActionResult::Success);
-    assert_eq!(state, 3);
 }
