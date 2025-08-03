@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 async fn run_single_game(handle: engine::SystemHandle) -> Result<(), Box<dyn std::error::Error>> {
     let mut engine = handle.into_engine();
     for _ in 0..10 {
-        engine.tick();
+        engine.tick().unwrap();
     }
     Ok(())
 }

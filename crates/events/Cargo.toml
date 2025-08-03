@@ -8,3 +8,4 @@ crossbeam = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 state = { path = "../state" }
+thiserror = { workspace = true }

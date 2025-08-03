@@ -15,8 +15,22 @@ use events::{
     events::{BotDecision, BotEvent, Event, GameEvent},
     queue::EventPriority,
 };
+use log::error;
 use state::{GameGrid, components::Bomb, grid::GridDelta};
+use thiserror::Error;
 use tokio::sync::watch;
+
+#[derive(Debug, Error)]
+pub enum EngineError {
+    #[error("Game grid lock poisoned: {0}")]
+    GridLockPoisoned(String),
+    #[error("System execution failed: {system:?}, reason: {reason}")]
+    SystemExecution { system: String, reason: String },
+    #[error("Event broadcast failed: {0}")]
+    EventBroadcast(String),
+    #[error("Bot command processing failed: {0}")]
+    BotCommandProcessing(String),
+}
 
 /// Core game engine advancing the simulation and broadcasting changes.
 pub struct Engine {
@@ -93,7 +107,7 @@ impl Engine {
     }
 
     /// Advances the game by a single tick by running all registered systems.
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self) -> Result<(), EngineError> {
         self.scheduler.run();
         self.events.process();
         while let Ok(Event::Bot(cmd)) = self.bot_command_rx.try_recv() {
@@ -110,11 +124,16 @@ impl Engine {
                 );
             }
         }
-        let grid = self.grid.read().expect("grid lock poisoned");
+        let grid = self
+            .grid
+            .read()
+            .map_err(|e| EngineError::GridLockPoisoned(e.to_string()))?;
         self.determinism_checker.record(&grid);
+        drop(grid);
         self.tick += 1;
         self.events
             .broadcast(Event::Game(GameEvent::TickCompleted { tick: self.tick }));
+        Ok(())
     }
 
     fn handle_bot_command(&mut self, cmd: BotEvent) -> Result<(), BotError> {
@@ -252,7 +271,7 @@ mod tests {
         let (mut engine, mut rx, _events) = Engine::new(config);
         engine.add_system(Box::new(MovementSystem::new()));
         assert_eq!(*rx.borrow(), GridDelta::None);
-        engine.tick();
+        engine.tick().unwrap();
         assert!(matches!(
             rx.borrow_and_update().clone(),
             GridDelta::SetTile { x: 0, y: 0, .. }
@@ -273,7 +292,7 @@ mod tests {
         engine.add_task("flag", vec![], true, move || {
             flag_clone.store(true, Ordering::SeqCst);
         });
-        engine.tick();
+        engine.tick().unwrap();
         assert!(flag.load(Ordering::SeqCst));
     }
 
@@ -302,7 +321,7 @@ mod tests {
         };
         let (mut engine, _rx, events) = Engine::new(cfg);
         let (_id, rx_event) = events.subscribe();
-        engine.tick();
+        engine.tick().unwrap();
         assert_eq!(
             rx_event.try_recv().unwrap(),
             Event::Game(GameEvent::TickCompleted { tick: 1 })
@@ -322,7 +341,7 @@ mod tests {
         engine.add_system(Box::new(MovementSystem::new()));
         let filter = EventFilter::new(|e| matches!(e, Event::Grid(_)));
         let (_id, rx_event) = events.subscribe_with_filter(Some(filter));
-        engine.tick();
+        engine.tick().unwrap();
         assert!(matches!(rx_event.try_recv().unwrap(), Event::Grid(_)));
     }
 
@@ -342,7 +361,7 @@ mod tests {
             }),
             EventPriority::Normal,
         );
-        engine.tick();
+        engine.tick().unwrap();
         assert!(matches!(
             rx.borrow_and_update().clone(),
             GridDelta::AddBomb(_)
@@ -360,7 +379,7 @@ mod tests {
         let (mut engine, _rx, events) = Engine::new(cfg);
         engine.add_system(Box::new(BombSystem::new()));
         let (_id, rx_event) = events.subscribe();
-        engine.tick();
+        engine.tick().unwrap();
         // Ensure some event was emitted
         assert!(rx_event.try_recv().is_ok());
     }

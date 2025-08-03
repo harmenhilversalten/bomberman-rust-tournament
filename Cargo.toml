@@ -11,6 +11,7 @@ members = [
     "crates/rl",
     "crates/test_utils",
     "crates/ffi",
+    "crates/common",
 ]
 resolver = "2"
 
@@ -31,3 +32,6 @@ bincode = "1"
 thiserror = "1"
 rand = "0.8"
 tempfile = "3"
+log = "0.4"
+env_logger = "0.10"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
