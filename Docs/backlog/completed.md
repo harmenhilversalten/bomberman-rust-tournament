@@ -251,3 +251,11 @@ This archive lists backlog items that have been completed and moved out of the a
   - Pathfinding and influence data inform decision scoring.
   - Components share data through defined interfaces.
 - **Prompt**: "Integrate goals, path, and influence crates with the bot kernel and implement goal-based decision flow."
+
+## 32. Implement Reinforcement Learning Integration
+- **Summary**: Add optional RL mode enabling bots to use neural-network policies and reward-based learning.
+- **Requirements**:
+  - Bots load RL models and can switch between RL and programmatic AI.
+  - Game state converts to observations and reward records.
+  - Reward calculation utilities and experience buffer available.
+- **Prompt**: "Implement reinforcement learning integration in the bot system. Add RL configuration options, implement policy loading and inference, add observation generation from game state, and create RL mode switching in the bot kernel."

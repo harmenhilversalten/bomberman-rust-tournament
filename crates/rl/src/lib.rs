@@ -20,9 +20,9 @@ pub use environment::{
 };
 pub use error::RLError;
 pub use policy::{Policy, PolicyType, RandomPolicy, TorchPolicy};
-pub use training::{ReplayBuffer, Trainer};
+pub use training::{ReplayBuffer as ExperienceBuffer, RewardRecord, Trainer, calculate_reward};
 pub use types::{Action, Observation, TrainingBatch};
-pub use value::{TorchValueEstimator, ValueEstimator};
+pub use value::{TorchValueEstimator as TorchValue, ValueEstimator as Value};
 
 #[cfg(test)]
 mod tests {
@@ -54,12 +54,12 @@ mod tests {
 
     #[test]
     fn torch_value_estimator_save_load_consistent() {
-        let estimator = TorchValueEstimator::new(4);
+        let estimator = TorchValue::new(4);
         let dir = tempdir().unwrap();
         let path = dir.path().join("value.ot");
         estimator.save(&path).unwrap();
 
-        let mut loaded = TorchValueEstimator::new(4);
+        let mut loaded = TorchValue::new(4);
         loaded.load(&path).unwrap();
 
         let obs = vec![0.1, 0.2, 0.3, 0.4];

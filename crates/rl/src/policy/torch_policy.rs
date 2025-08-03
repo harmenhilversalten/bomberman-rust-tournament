@@ -31,6 +31,13 @@ impl TorchPolicy {
             net: Mutex::new(net),
         }
     }
+
+    /// Load a policy from the specified file returning the initialized instance.
+    pub fn load(path: &Path, input_dim: i64, output_dim: i64) -> Result<Self, RLError> {
+        let mut policy = Self::new(input_dim, output_dim);
+        Policy::load(&mut policy, path)?;
+        Ok(policy)
+    }
 }
 
 impl Policy for TorchPolicy {

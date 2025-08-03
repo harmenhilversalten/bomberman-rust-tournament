@@ -8,5 +8,5 @@ pub mod game_grid;
 pub mod tile;
 
 pub use delta::GridDelta;
-pub use game_grid::GameGrid;
+pub use game_grid::{GameGrid, ObservationDelta};
 pub use tile::Tile;

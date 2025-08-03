@@ -27,29 +27,6 @@ Completed backlog items 1-29 are archived in [completed.md](completed.md).
   * Event bus must handle cross-crate event serialization
 * **Prompt**: “Implement event bus integration across all crates. Ensure `GridDelta` events are broadcast after each engine tick and that bot commands are published back to the engine via the event bus. Add event subscriptions to all AI components.”
 
-## BPI-004: Implement Reinforcement Learning Integration
-* **Summary**: Add an optional RL mode in which bots load neural-network policies, generate observations, and compute rewards for training.
-* **Requirements**
-  * RL policies must be loadable and usable by bots
-  * Observation generation must work with neural-network inputs
-  * Reward calculation must be implemented for training
-  * RL mode must be toggleable in bot configuration
-* **Files that need changing**
-  * `crates/bot/src/bot/config.rs` – Add RL configuration options
-  * `crates/bot/src/bot/kernel.rs` – Add RL decision mode
-  * `crates/rl/src/lib.rs` – Implement policy loading and inference
-  * `crates/bot/src/ai/mod.rs` – Add RL AI implementation
-  * `crates/state/src/lib.rs` – Add observation generation
-  * `crates/bot/Cargo.toml` – Add dependency on `rl` crate
-* **What needs to change**
-  * Bot configuration must include RL model path and enable/disable flag
-  * Bot kernel must switch between programmatic and RL decision making
-  * `state` crate must generate observations compatible with neural networks
-  * `rl` crate must provide policy inference interface
-* **Prompt**: “Implement reinforcement learning integration in the bot system. Add RL configuration options, implement policy loading and inference, add observation generation from game state, and create RL mode switching in the bot kernel.”
-
----
-
 ## BPI-005: Implement Bomb System Integration
 * **Summary**: Merge the `bombs` crate with both engine and bot logic so bomb placement, chain reactions, and power-ups are handled consistently and broadcast as events.
 * **Requirements**

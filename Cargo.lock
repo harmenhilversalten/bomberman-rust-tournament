@@ -119,7 +119,10 @@ dependencies = [
  "goals",
  "influence",
  "path",
+ "rl",
  "state",
+ "tch",
+ "tempfile",
  "thiserror",
 ]
 

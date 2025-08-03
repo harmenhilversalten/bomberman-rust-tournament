@@ -22,6 +22,13 @@ pub struct GameGrid {
     delta_tx: watch::Sender<GridDelta>,
 }
 
+/// Difference between two observations.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ObservationDelta {
+    /// Difference of tile encodings between snapshots.
+    pub tiles: Vec<f32>,
+}
+
 impl GameGrid {
     /// Creates a new grid filled with `Tile::Empty` tiles.
     pub fn new(width: usize, height: usize) -> Self {
@@ -199,6 +206,19 @@ impl GameGrid {
         obs
     }
 
+    /// Generate an incremental observation compared to a previous snapshot.
+    pub fn observe_delta(&self, prev: &SnapshotView) -> ObservationDelta {
+        let current = self.snapshot();
+        let curr_tiles: Vec<f32> = current.tiles().iter().map(|t| t.to_u8() as f32).collect();
+        let prev_tiles: Vec<f32> = prev.tiles().iter().map(|t| t.to_u8() as f32).collect();
+        let tiles = curr_tiles
+            .iter()
+            .zip(prev_tiles.iter())
+            .map(|(c, p)| c - p)
+            .collect();
+        ObservationDelta { tiles }
+    }
+
     fn update_snapshot(&mut self) {
         let new_inner = SnapshotInner::new(
             Arc::<[Tile]>::from(self.tiles.clone()),
@@ -276,6 +296,22 @@ mod tests {
                 y: 0,
                 tile: Tile::Wall
             }
+        );
+    }
+
+    #[test]
+    fn observe_delta_reports_changes() {
+        let mut grid = GameGrid::new(2, 2);
+        let prev = grid.snapshot();
+        grid.apply_delta(GridDelta::SetTile {
+            x: 0,
+            y: 0,
+            tile: Tile::Wall,
+        });
+        let delta = grid.observe_delta(&prev);
+        assert_eq!(
+            delta.tiles[0],
+            Tile::Wall.to_u8() as f32 - Tile::Empty.to_u8() as f32
         );
     }
 }
