@@ -3,7 +3,7 @@ use std::{fs, path::Path};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use super::engine_config::EngineConfig;
+use super::{engine_config::EngineConfig, tournament_config::TournamentConfig};
 
 #[derive(Debug, Error)]
 pub enum ConfigError {
@@ -44,13 +44,6 @@ impl BotConfig {
         }
         Ok(())
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TournamentConfig {
-    pub rounds: u32,
-    pub games_per_round: u32,
-    pub scoring_system: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
