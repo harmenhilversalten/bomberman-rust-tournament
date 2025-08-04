@@ -115,6 +115,224 @@ Completed backlog items 1-29 are archived in [completed.md](completed.md).
   * Performance tests must measure decision latency
 * **Prompt**: “Implement comprehensive testing integration including integration tests for all crate interactions, mock objects for testing, edge-case coverage, and performance benchmarks. Ensure tests verify event bus communication and bot-engine interaction.”
 
+---
+
+## BPI-011: Fix Incomplete Bot Kernel Integration
+* **Summary**: Fix and complete the bot kernel implementation ensuring proper AI integration.
+* **Requirements**
+  * Complete bot kernel implementation with proper AI component integration
+  * Ensure Bot struct uses AIDecisionPipeline from BPI-003
+  * Connect bot decision making to event bus command publishing
+  * Add proper bot lifecycle management
+* **Files that need changing**
+  * `crates/bot/src/bot/kernel.rs` – Complete or fix bot kernel implementation
+  * `crates/bot/src/bot/mod.rs` – Ensure proper module exports
+  * `crates/bot/src/lib.rs` – Verify bot kernel is properly exported
+* **What needs to change**
+  * Bot kernel must instantiate and use AIDecisionPipeline
+  * Bot must subscribe to GridDelta events and publish commands via event bus
+  * Bot configuration must include AI component settings
+  * Bot lifecycle must be properly managed by engine
+* **Prompt**: "Complete the bot kernel implementation by integrating the AIDecisionPipeline, connecting to event bus for state updates and command publishing, and ensuring proper bot lifecycle management. Fix any missing bot kernel functionality."
+
+---
+
+## BPI-012: Fix Missing SystemInitializer Implementation
+* **Summary**: Finalize the SystemInitializer with validated configuration and strict ordering.
+* **Requirements**
+  * Complete SystemInitializer implementation with proper initialization order
+  * Ensure UnifiedConfig can be loaded from files with validation
+  * Implement proper error handling for initialization failures
+  * Add component health checks after initialization
+* **Files that need changing**
+  * `crates/engine/src/config/mod.rs` – Complete SystemInitializer implementation
+  * `crates/engine/src/lib.rs` – Ensure SystemInitializer is properly exported
+  * `crates/engine/src/main.rs` – Verify initialization flow
+* **What needs to change**
+  * SystemInitializer must follow correct initialization order (event bus → state → engine → AI components → bots)
+  * Configuration validation must catch inconsistencies between components
+  * Error handling must provide clear diagnostics for startup failures
+  * Health checks must verify all components are properly initialized
+* **Prompt**: "Complete the SystemInitializer implementation with proper initialization order, comprehensive configuration validation, robust error handling, and component health checks. Ensure the unified initialization system works correctly for both single game and tournament modes."
+
+---
+
+## BPI-013: Fix Event Bus Serialization Issues
+* **Summary**: Ensure all event types serialize correctly with proper filtering and priority.
+* **Requirements**
+  * Complete event serialization for all event types
+  * Ensure event filtering works correctly for different component types
+  * Implement proper event priority and ordering
+  * Add event bus performance monitoring
+* **Files that need changing**
+  * `crates/events/src/lib.rs` – Complete event serialization implementation
+  * `crates/events/src/bus.rs` – Fix event filtering and subscription
+  * `crates/events/src/queue.rs` – Implement event priority handling
+  * `crates/engine/src/engine/game_engine.rs` – Verify event usage
+* **What needs to change**
+  * All event types must be serializable/deserializable across crate boundaries
+  * Event filters must correctly route events to appropriate subscribers
+  * Event priority must ensure critical events are processed first
+  * Event bus must handle high-frequency events without performance degradation
+* **Prompt**: "Complete event bus serialization for all event types, fix event filtering and subscription mechanisms, implement proper event priority handling, and add performance monitoring to ensure the event bus can handle high-frequency events efficiently."
+
+---
+
+## BPI-014: Fix Incomplete AI Component Integration
+* **Summary**: Align goals, pathfinding, and influence maps with the AI decision pipeline.
+* **Requirements**
+  * Ensure AI components work together seamlessly
+  * Fix goal scoring to properly use influence map data
+  * Implement dynamic pathfinding with danger zone consideration
+  * Complete integration between AI decision pipeline and bot kernel
+* **Files that need changing**
+  * `crates/bot/src/ai/pipeline.rs` – Fix AI component coordination
+  * `crates/goals/src/lib.rs` – Ensure goal scoring uses influence data
+  * `crates/path/src/lib.rs` – Implement dynamic pathfinding
+  * `crates/influence/src/lib.rs` – Fix influence map integration
+  * `crates/bot/src/bot/kernel.rs` – Complete AI pipeline integration
+* **What needs to change**
+  * GoalManager must generate goals based on current game state and influence data
+  * Pathfinder must consider dynamic obstacles and danger zones from influence maps
+  * Influence maps must be updated based on game state changes via event bus
+  * AIDecisionPipeline must be properly instantiated and used by Bot kernel
+* **Prompt**: "Fix AI component integration by ensuring goals, pathfinding, and influence maps work together seamlessly. Implement dynamic pathfinding with danger zone consideration, fix goal scoring to use influence data, and complete the integration between AI decision pipeline and bot kernel."
+
+---
+
+## BPI-015: Fix RL Integration Issues
+* **Summary**: Strengthen reinforcement learning integration with detailed observations and training support.
+* **Requirements**
+  * Complete RL observation generation with proper game state encoding
+  * Implement robust RL policy loading with error handling
+  * Add reward calculation and experience buffer for training
+  * Fix RL mode switching and configuration
+* **Files that need changing**
+  * `crates/bot/src/ai/rl_ai.rs` – Complete RL observation generation
+  * `crates/rl/src/lib.rs` – Add policy loading and training support
+  * `crates/state/src/lib.rs` – Implement proper observation generation
+  * `crates/bot/src/bot/config.rs` – Fix RL configuration options
+* **What needs to change**
+  * RL observations must encode full game state (tiles, agents, bombs, power-ups) from agent's perspective
+  * Policy loading must handle model file errors gracefully with fallback to programmatic AI
+  * Reward calculation must support training scenarios with configurable reward shaping
+  * RL mode must be properly toggleable with runtime configuration changes
+* **Prompt**: "Complete RL integration by implementing proper game state observation generation, robust policy loading with error handling, reward calculation for training support, and working RL mode switching. Ensure RL observations encode the full game state from the agent's perspective."
+
+---
+
+## BPI-016: Fix Tournament System Integration Issues
+* **Summary**: Finalize tournament modules with robust bot and session management.
+* **Requirements**
+  * Complete all tournament module implementations
+  * Ensure proper bot registration and lifecycle management in tournaments
+  * Fix game session management with proper error handling
+  * Add comprehensive tournament configuration validation
+* **Files that need changing**
+  * `crates/engine/src/tournament/game_session.rs` – Complete game session management
+  * `crates/engine/src/tournament/registry.rs` – Fix bot registration
+  * `crates/engine/src/tournament/scheduler.rs` – Complete tournament scheduling
+  * `crates/engine/src/tournament/scoring.rs` – Fix result aggregation
+  * `crates/engine/src/config/mod.rs` – Add tournament configuration validation
+* **What needs to change**
+  * Game sessions must properly manage bot instances and game execution
+  * Bot registry must handle tournament-specific bot lifecycle management
+  * Tournament scheduler must support different tournament formats (round-robin, elimination)
+  * Scoring system must aggregate results correctly across multiple games
+  * Configuration validation must ensure tournament settings are consistent
+* **Prompt**: "Complete tournament system integration by finishing all tournament module implementations, fixing bot registration and lifecycle management, completing game session management with proper error handling, and adding comprehensive tournament configuration validation."
+
+---
+
+## BPI-017: Fix Error Handling Consistency Issues
+* **Summary**: Standardize error management and recovery across the codebase.
+* **Requirements**
+  * Standardize error types across all crates
+  * Complete error recovery mechanisms for all components
+  * Verify circuit breaker implementation works correctly
+  * Ensure proper error propagation with context preservation
+* **Files that need changing**
+  * `crates/common/src/lib.rs` – Standardize error types
+  * `crates/engine/src/engine/game_engine.rs` – Complete error recovery
+  * `crates/events/src/lib.rs` – Verify circuit breaker implementation
+  * `crates/bot/src/bot/kernel.rs` – Add error handling for bot decisions
+  * All crate `src/error.rs` files – Standardize error types
+* **What needs to change**
+  * All crates must use consistent error types from common crate
+  * Engine must recover gracefully from system failures with retry mechanisms
+  * Event bus circuit breaker must prevent cascading failures
+  * Bot must handle decision timeouts and AI component failures
+  * Error messages must include sufficient context for debugging
+* **Prompt**: "Fix error handling consistency by standardizing error types across all crates, completing error recovery mechanisms, verifying circuit breaker implementation, and ensuring proper error propagation with context preservation. Add comprehensive error handling for all component failures."
+
+---
+
+## BPI-018: Add Missing Configuration Files and Validation
+* **Summary**: Provide default configs with robust validation and overrides.
+* **Requirements**
+  * Create default configuration files for all deployment modes
+  * Complete cross-component configuration validation
+  * Fix environment variable override functionality
+  * Verify feature flags work correctly for optional components
+* **Files that need changing**
+  * `config/default.toml` – Create default configuration
+  * `config/tournament.toml` – Create tournament configuration
+  * `crates/engine/src/config/mod.rs` – Complete configuration validation
+  * `crates/engine/src/main.rs` – Fix environment variable handling
+  * All crate `Cargo.toml` files – Verify feature flags
+* **What needs to change**
+  * Default configuration must include all necessary settings for development
+  * Tournament configuration must include all tournament-specific settings
+  * Configuration validation must catch inconsistencies between engine, bot, and AI settings
+  * Environment variables must be able to override any configuration setting
+  * Feature flags must properly enable/disable optional components like RL
+* **Prompt**: "Add missing configuration files and validation by creating default configurations for all deployment modes, completing cross-component configuration validation, fixing environment variable override functionality, and verifying feature flags work correctly for optional components."
+
+---
+
+## BPI-019: Fix Performance and Memory Issues
+* **Summary**: Optimize event bus, AI, and engine for speed and low memory.
+* **Requirements**
+  * Optimize event bus performance for high-frequency events
+  * Ensure bot decision making meets 60Hz performance targets
+  * Optimize memory usage for long-running tournaments
+  * Reduce AI component coordination overhead
+* **Files that need changing**
+  * `crates/events/src/bus.rs` – Optimize event bus performance
+  * `crates/bot/src/ai/pipeline.rs` – Optimize AI decision making
+  * `crates/engine/src/engine/game_engine.rs` – Optimize game loop
+  * `crates/engine/src/tournament.rs` – Optimize tournament memory usage
+  * `crates/common/src/diagnostics.rs` – Add performance monitoring
+* **What needs to change**
+  * Event bus must use efficient data structures for high-frequency event processing
+  * Bot decisions must be optimized to complete within 16ms (60Hz) time budget
+  * Tournament must manage memory efficiently for hundreds of games
+  * AI components must minimize data copying and allocation overhead
+  * Performance monitoring must track critical metrics and alert on degradation
+* **Prompt**: "Fix performance and memory issues by optimizing event bus performance for high-frequency events, ensuring bot decision making meets 60Hz requirements, optimizing memory usage for long-running tournaments, and reducing AI component coordination overhead. Add comprehensive performance monitoring."
+
+---
+
+## BPI-020: Add Missing Documentation and Examples
+* **Summary**: Improve user guidance with thorough API docs and examples.
+* **Requirements**
+  * Complete API documentation for all new components
+  * Add usage examples for the integrated system
+  * Update architecture documentation to reflect current state
+  * Create setup and deployment guides
+* **Files that need changing**
+  * `Docs/` – Update all architecture documentation
+  * `crates/*/src/lib.rs` – Complete API documentation
+  * `examples/` – Create usage examples
+  * `README.md` – Update setup instructions
+  * `Docs/deployment/` – Create deployment guides
+* **What needs to change**
+  * All public APIs must have comprehensive documentation with examples
+  * Architecture docs must reflect the current integrated system state
+  * Usage examples must demonstrate event bus, bot management, and tournament functionality
+  * Setup guides must include configuration options and deployment modes
+  * Deployment guides must cover different environments (development, staging, production)
+* **Prompt**: "Add missing documentation and examples by completing API documentation for all new components, adding usage examples for the integrated system, updating architecture documentation to reflect current implementation, and creating comprehensive setup and deployment guides."
 
 ## 31. Legacy Cleanup
 - **Summary**: Remove or deprecate remaining engine code that duplicates functionality now provided by the feature crates, keeping only the legacy bot strategy for selection.
