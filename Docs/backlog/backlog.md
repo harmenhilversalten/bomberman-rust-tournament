@@ -117,26 +117,6 @@ Completed backlog items 1-29 are archived in [completed.md](completed.md).
 
 ---
 
-## BPI-011: Fix Incomplete Bot Kernel Integration
-* **Summary**: Fix and complete the bot kernel implementation ensuring proper AI integration.
-* **Requirements**
-  * Complete bot kernel implementation with proper AI component integration
-  * Ensure Bot struct uses AIDecisionPipeline from BPI-003
-  * Connect bot decision making to event bus command publishing
-  * Add proper bot lifecycle management
-* **Files that need changing**
-  * `crates/bot/src/bot/kernel.rs` – Complete or fix bot kernel implementation
-  * `crates/bot/src/bot/mod.rs` – Ensure proper module exports
-  * `crates/bot/src/lib.rs` – Verify bot kernel is properly exported
-* **What needs to change**
-  * Bot kernel must instantiate and use AIDecisionPipeline
-  * Bot must subscribe to GridDelta events and publish commands via event bus
-  * Bot configuration must include AI component settings
-  * Bot lifecycle must be properly managed by engine
-* **Prompt**: "Complete the bot kernel implementation by integrating the AIDecisionPipeline, connecting to event bus for state updates and command publishing, and ensuring proper bot lifecycle management. Fix any missing bot kernel functionality."
-
----
-
 ## BPI-012: Fix Missing SystemInitializer Implementation
 * **Summary**: Finalize the SystemInitializer with validated configuration and strict ordering.
 * **Requirements**

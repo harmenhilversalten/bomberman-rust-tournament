@@ -276,3 +276,21 @@ This archive lists backlog items that have been completed and moved out of the a
   - Feature flags are properly configured
   - Circular dependencies are resolved
 - **Prompt**: "Add missing system dependencies to all crates. Ensure engine depends on events, bot, and bombs; bot depends on goals, path, influence, and rl; and all AI crates depend on events and state. Resolve any circular dependencies."
+
+## BPI-011: Fix Incomplete Bot Kernel Integration
+- **Summary**: Fix and complete the bot kernel implementation ensuring proper AI integration.
+- **Requirements**
+  * Complete bot kernel implementation with proper AI component integration
+  * Ensure Bot struct uses AIDecisionPipeline from BPI-003
+  * Connect bot decision making to event bus command publishing
+  * Add proper bot lifecycle management
+- **Files that needed changing**
+  * `crates/bot/src/bot/kernel.rs` – Complete or fix bot kernel implementation
+  * `crates/bot/src/bot/mod.rs` – Ensure proper module exports
+  * `crates/bot/src/lib.rs` – Verify bot kernel is properly exported
+- **What changed**
+  * Bot kernel instantiates and uses `AIDecisionPipeline`
+  * Bot subscribes to `GridDelta` events and publishes commands via event bus
+  * Bot configuration includes AI component settings
+  * Bot lifecycle is managed via a `BotHandle`
+- **Prompt**: "Complete the bot kernel implementation by integrating the AIDecisionPipeline, connecting to event bus for state updates and command publishing, and ensuring proper bot lifecycle management. Fix any missing bot kernel functionality."

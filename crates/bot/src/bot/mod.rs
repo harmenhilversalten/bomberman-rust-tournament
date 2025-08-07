@@ -11,5 +11,5 @@ pub mod state;
 
 pub use config::BotConfig;
 pub use decision::DecisionMaker;
-pub use kernel::Bot;
+pub use kernel::{Bot, BotHandle};
 pub use state::BotState;
