@@ -1,4 +1,4 @@
-use std::{sync::Arc, time::Instant};
+use std::{sync::Arc, thread::JoinHandle, time::Instant};
 
 use events::{
     bus::{EventBus, EventFilter},
@@ -8,10 +8,13 @@ use events::{
 use state::grid::GridDelta;
 
 use super::{BotConfig, BotState, DecisionMaker};
-use crate::ai::{AIDecisionPipeline, RLAI};
+use crate::ai::AIDecisionPipeline;
+#[cfg(feature = "rl")]
+use crate::ai::RLAI;
 use goals::GoalManager;
 use influence::map::InfluenceMap;
 use path::Pathfinder;
+#[cfg(feature = "rl")]
 use rl::{Policy, RewardRecord, TorchPolicy, Value};
 use std::sync::Mutex;
 
@@ -27,11 +30,29 @@ pub struct Bot {
     pathfinder: Arc<Pathfinder>,
     #[allow(dead_code)]
     influence_map: Arc<Mutex<InfluenceMap>>,
+    #[cfg(feature = "rl")]
     rl_policy: Option<Arc<Mutex<dyn Policy>>>,
+    #[cfg(feature = "rl")]
     #[allow(dead_code)]
     value_network: Option<Arc<dyn Value>>,
+    #[cfg(feature = "rl")]
     #[allow(dead_code)]
     reward_buffer: Vec<RewardRecord>,
+}
+
+/// Handle to a running bot instance allowing lifecycle control.
+pub struct BotHandle {
+    handle: JoinHandle<BotState>,
+    events: Arc<EventBus>,
+}
+
+impl BotHandle {
+    /// Stops the bot by broadcasting a shutdown event and waits for completion.
+    pub fn stop(self) -> BotState {
+        self.events
+            .broadcast(Event::System(SystemEvent::EngineStopped));
+        self.handle.join().expect("bot thread panicked")
+    }
 }
 
 impl Bot {
@@ -41,6 +62,7 @@ impl Bot {
         let pathfinder = Arc::new(Pathfinder::new());
         let influence_map = Arc::new(Mutex::new(InfluenceMap::new(1, 1)));
 
+        #[cfg(feature = "rl")]
         let (ai, rl_policy, value_network) =
             if config.rl_mode {
                 match config
@@ -75,7 +97,15 @@ impl Bot {
                 (ai, None, None)
             };
 
-        Self {
+        #[cfg(not(feature = "rl"))]
+        let ai: Box<dyn DecisionMaker<GridDelta, BotDecision>> = Box::new(AIDecisionPipeline::new(
+            Arc::clone(&goal_manager),
+            Arc::clone(&pathfinder),
+            Arc::clone(&influence_map),
+        ));
+
+        #[cfg(feature = "rl")]
+        return Self {
             config,
             events,
             ai,
@@ -86,7 +116,25 @@ impl Bot {
             rl_policy,
             value_network,
             reward_buffer: Vec::new(),
+        };
+
+        #[cfg(not(feature = "rl"))]
+        Self {
+            config,
+            events,
+            ai,
+            state: BotState::default(),
+            goal_manager,
+            pathfinder,
+            influence_map,
         }
+    }
+
+    /// Spawn the bot on a new thread returning a [`BotHandle`] for control.
+    pub fn spawn(self) -> BotHandle {
+        let events = Arc::clone(&self.events);
+        let handle = std::thread::spawn(move || self.run());
+        BotHandle { handle, events }
     }
 
     /// Run the bot loop processing `GridDelta` events and emitting commands.
@@ -121,8 +169,14 @@ impl Bot {
     }
 
     /// Returns true if an RL policy is loaded.
+    #[cfg(feature = "rl")]
     pub fn has_rl_policy(&self) -> bool {
         self.rl_policy.is_some()
+    }
+
+    #[cfg(not(feature = "rl"))]
+    pub fn has_rl_policy(&self) -> bool {
+        false
     }
 }
 
@@ -130,6 +184,7 @@ impl Bot {
 mod tests {
     use super::*;
     use events::events::Event;
+    #[cfg(feature = "rl")]
     use tempfile::tempdir;
 
     #[test]
@@ -141,11 +196,10 @@ mod tests {
             BotConfig::new("b", crate::ai::AiType::Heuristic),
             Arc::clone(&bus),
         );
-        let handle = std::thread::spawn(move || bot.run());
+        let handle = bot.spawn();
         std::thread::sleep(std::time::Duration::from_millis(10));
         bus.broadcast(Event::Grid(GridDelta::None));
-        bus.broadcast(Event::System(SystemEvent::EngineStopped));
-        let _ = handle.join();
+        let _state = handle.stop();
         bus.process();
         assert!(matches!(
             rx.try_recv().unwrap(),
@@ -153,6 +207,7 @@ mod tests {
         ));
     }
 
+    #[cfg(feature = "rl")]
     #[test]
     fn bot_loads_rl_policy_when_enabled() {
         let dir = tempdir().unwrap();
@@ -165,5 +220,19 @@ mod tests {
         let bus = Arc::new(EventBus::new());
         let bot = Bot::new(cfg, Arc::clone(&bus));
         assert!(bot.has_rl_policy());
+    }
+
+    #[test]
+    fn spawn_returns_handle_and_stop_yields_state() {
+        let bus = Arc::new(EventBus::new());
+        let bot = Bot::new(
+            BotConfig::new("b", crate::ai::AiType::Heuristic),
+            Arc::clone(&bus),
+        );
+        let handle = bot.spawn();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        bus.broadcast(Event::Grid(GridDelta::None));
+        let state = handle.stop();
+        assert_eq!(state.decisions(), 1);
     }
 }

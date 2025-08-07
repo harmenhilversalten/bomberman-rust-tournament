@@ -54,3 +54,4 @@ As new backlog features are completed, list them below with a reference to the b
 - Reinforcement learning integration enabling bots to load policies and compute rewards ([Backlog #32](../backlog/completed.md#32-implement-reinforcement-learning-integration)).
 - Bomb system integrated across engine and bot with event broadcasting ([Backlog #33](../backlog/completed.md#33-implement-bomb-system-integration)).
 - System crate dependencies declared with feature flags and workspace alignment ([Backlog #34](../backlog/completed.md#34-add-missing-system-dependencies)).
+- Bot kernel integration with AI pipeline and lifecycle handle ([Backlog BPI-011](../backlog/completed.md#bpi-011-fix-incomplete-bot-kernel-integration)).
