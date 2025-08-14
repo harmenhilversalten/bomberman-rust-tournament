@@ -11,7 +11,6 @@ thiserror = { workspace = true }
 goals = { path = "../goals" }
 path = { path = "../path" }
 influence = { path = "../influence" }
-rl = { path = "../rl", optional = true }
 bombs = { path = "../bombs" }
 tokio = { workspace = true, features = ["full"] }
 serde = { workspace = true, features = ["derive"] }
@@ -22,4 +21,3 @@ tempfile = { workspace = true }
 
 [features]
 default = []
-rl = ["dep:rl"]

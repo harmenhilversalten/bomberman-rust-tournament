@@ -102,12 +102,17 @@ impl GameGrid {
     }
 
     /// All bombs currently in the grid.
-    pub(crate) fn bombs(&self) -> &[Bomb] {
+    pub fn bombs(&self) -> &[Bomb] {
         &self.bombs
     }
 
+    /// All agents currently in the grid (mutable).
+    pub fn agents_mut(&mut self) -> &mut [AgentState] {
+        &mut self.agents
+    }
+
     /// All agents currently in the grid.
-    pub(crate) fn agents(&self) -> &[AgentState] {
+    pub fn agents(&self) -> &[AgentState] {
         &self.agents
     }
 
@@ -172,6 +177,12 @@ impl GameGrid {
             GridDelta::AddAgent(a) => {
                 self.agents.push(a.clone());
                 self.version.fetch_add(1, Ordering::Relaxed);
+            }
+            GridDelta::MoveAgent(agent_id, new_pos) => {
+                if let Some(agent) = self.agents.iter_mut().find(|a| a.id == *agent_id) {
+                    agent.position = *new_pos;
+                    self.version.fetch_add(1, Ordering::Relaxed);
+                }
             }
         }
         self.update_snapshot();

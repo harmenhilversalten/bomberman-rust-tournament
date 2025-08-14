@@ -2,7 +2,6 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, clippy::all)]
 
-use std::time::Duration;
 
 /// Module containing simple mock types.
 pub mod mocks {

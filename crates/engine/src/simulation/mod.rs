@@ -8,8 +8,8 @@ pub use replay::{Replay, ReplayRecorder};
 mod tests {
     use crate::{config::EngineConfig, engine::Engine, systems::MovementSystem};
 
-    #[test]
-    fn replay_reproduces_state() {
+    #[tokio::test]
+    async fn replay_reproduces_state() {
         let cfg = EngineConfig {
             width: 1,
             height: 1,
@@ -19,7 +19,7 @@ mod tests {
         engine.add_system(Box::new(MovementSystem::new()));
         engine.start_replay_recording();
         for _ in 0..3 {
-            engine.tick().unwrap();
+            engine.tick().await.unwrap();
         }
         let replay = engine.stop_replay_recording();
         let recorded_hashes = engine.determinism_hashes().to_vec();

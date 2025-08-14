@@ -10,3 +10,7 @@ tokio = { workspace = true, features = ["sync"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 bincode = { workspace = true }
+
+log = { workspace = true }
+
+

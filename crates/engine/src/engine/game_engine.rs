@@ -8,6 +8,7 @@ use crate::{
     systems::System,
 };
 use ::bot::BotConfig;
+use common::Direction;
 use crossbeam::channel::Receiver;
 use events::{
     bus::{EventBus, EventFilter},
@@ -107,8 +108,8 @@ impl Engine {
     }
 
     /// Advances the game by a single tick by running all registered systems.
-    pub fn tick(&mut self) -> Result<(), EngineError> {
-        self.scheduler.run();
+    pub async fn tick(&mut self) -> Result<(), EngineError> {
+        self.scheduler.run().await;
         self.events.process();
         while let Ok(Event::Bot(cmd)) = self.bot_command_rx.try_recv() {
             let bot_id = match &cmd {
@@ -140,6 +141,24 @@ impl Engine {
         match cmd {
             BotEvent::Decision { bot_id, decision } => match decision {
                 BotDecision::Wait => Ok(()),
+                BotDecision::Move(direction) => {
+                    let mut grid = self.grid.write().expect("grid lock poisoned");
+                    if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
+                        let (mut x, mut y) = agent.position;
+                        match direction {
+                            common::Direction::Up => y = y.saturating_sub(1),
+                            common::Direction::Down => y = y.saturating_add(1),
+                            common::Direction::Left => x = x.saturating_sub(1),
+                            common::Direction::Right => x = x.saturating_add(1),
+                        }
+                        agent.position = (x, y);
+                        let delta = GridDelta::MoveAgent(bot_id, (x, y));
+                        self.replay_recorder.record(delta.clone());
+                        let _ = self.delta_tx.send(delta.clone());
+                        self.events.broadcast(Event::Grid(delta));
+                    }
+                    Ok(())
+                }
                 BotDecision::PlaceBomb => {
                     let bomb = Bomb::new(bot_id, (0, 0), 3, 1);
                     let delta = GridDelta::AddBomb(bomb);
@@ -164,8 +183,15 @@ impl Engine {
             .spawn_bot(config, Arc::clone(&self.events))?;
         let id = handle.id;
         self.bots.push(handle);
-        Ok(id)
-    }
+        // Add agent to the game grid
+        let agent_state = state::components::AgentState::new(id, (0, 0)); // Default position for now
+        let delta = GridDelta::AddAgent(agent_state);
+        {
+            let mut grid = self.grid.write().expect("grid lock poisoned");
+            grid.apply_delta(delta.clone());
+        }
+        self.replay_recorder.record(delta);
+        Ok(id)    }
 
     /// Remove a bot from the engine.
     pub fn remove_bot(&mut self, bot_id: BotId) -> Result<(), BotError> {
@@ -259,8 +285,8 @@ mod tests {
         atomic::{AtomicBool, Ordering},
     };
 
-    #[test]
-    fn tick_broadcasts_system_delta() {
+    #[tokio::test]
+    async fn tick_broadcasts_system_delta() {
         use crate::{config::EngineConfig, systems::MovementSystem};
 
         let config = EngineConfig {
@@ -271,15 +297,15 @@ mod tests {
         let (mut engine, mut rx, _events) = Engine::new(config);
         engine.add_system(Box::new(MovementSystem::new()));
         assert_eq!(*rx.borrow(), GridDelta::None);
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert!(matches!(
             rx.borrow_and_update().clone(),
             GridDelta::SetTile { x: 0, y: 0, .. }
         ));
     }
 
-    #[test]
-    fn tick_runs_scheduler_tasks() {
+    #[tokio::test]
+    async fn tick_runs_scheduler_tasks() {
         use crate::config::EngineConfig;
         let config = EngineConfig {
             width: 1,
@@ -292,7 +318,7 @@ mod tests {
         engine.add_task("flag", vec![], true, move || {
             flag_clone.store(true, Ordering::SeqCst);
         });
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert!(flag.load(Ordering::SeqCst));
     }
 
@@ -311,8 +337,8 @@ mod tests {
         assert_eq!(engine.config().height, 3);
     }
 
-    #[test]
-    fn tick_emits_game_event() {
+    #[tokio::test]
+    async fn tick_emits_game_event() {
         use crate::config::EngineConfig;
         let cfg = EngineConfig {
             width: 1,
@@ -321,15 +347,15 @@ mod tests {
         };
         let (mut engine, _rx, events) = Engine::new(cfg);
         let (_id, rx_event) = events.subscribe();
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert_eq!(
             rx_event.try_recv().unwrap(),
             Event::Game(GameEvent::TickCompleted { tick: 1 })
         );
     }
 
-    #[test]
-    fn tick_broadcasts_grid_event() {
+    #[tokio::test]
+    async fn tick_broadcasts_grid_event() {
         use crate::{config::EngineConfig, systems::MovementSystem};
         use events::bus::EventFilter;
         let config = EngineConfig {
@@ -341,12 +367,12 @@ mod tests {
         engine.add_system(Box::new(MovementSystem::new()));
         let filter = EventFilter::new(|e| matches!(e, Event::Grid(_)));
         let (_id, rx_event) = events.subscribe_with_filter(Some(filter));
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert!(matches!(rx_event.try_recv().unwrap(), Event::Grid(_)));
     }
 
-    #[test]
-    fn engine_processes_bot_commands() {
+    #[tokio::test]
+    async fn engine_processes_bot_commands() {
         use crate::config::EngineConfig;
         let cfg = EngineConfig {
             width: 1,
@@ -361,15 +387,15 @@ mod tests {
             }),
             EventPriority::Normal,
         );
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert!(matches!(
             rx.borrow_and_update().clone(),
             GridDelta::AddBomb(_)
         ));
     }
 
-    #[test]
-    fn bomb_system_emits_event() {
+    #[tokio::test]
+    async fn bomb_system_emits_event() {
         use crate::{config::EngineConfig, systems::BombSystem};
         let cfg = EngineConfig {
             width: 1,
@@ -379,7 +405,7 @@ mod tests {
         let (mut engine, _rx, events) = Engine::new(cfg);
         engine.add_system(Box::new(BombSystem::new()));
         let (_id, rx_event) = events.subscribe();
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         // Ensure some event was emitted
         assert!(rx_event.try_recv().is_ok());
     }

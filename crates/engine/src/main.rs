@@ -1,31 +1,118 @@
-use engine::{SystemInitializer, TournamentManager, UnifiedConfig};
+use std::fs::File;
+use std::io::Write;
+use engine::{SystemInitializer, TournamentManager, UnifiedConfig, display::GameDisplay};
 use log::info;
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
+use crossterm::event::{self, Event, KeyCode};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
+    println!("🎮 Starting Bomberman Tournament Engine...");
+    
     let config_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "config/default.toml".to_string());
+    println!("📁 Loading config from: {}", config_path);
+    
     let mut config = UnifiedConfig::from_file(&config_path)?;
     config = config.with_env_overrides()?;
+    println!("✅ Configuration loaded successfully");
     info!("Loaded configuration from {}", config_path);
-    let mut initializer = SystemInitializer::new(config);
+    
+    println!("🔧 Initializing system...");
+    let mut initializer = SystemInitializer::new(config.clone());
     let handle = initializer.initialize().await?;
+    println!("✅ System initialized successfully");
     info!("System initialized successfully");
+    
     if handle.has_tournament() {
+        println!("🏆 Running tournament mode");
         run_tournament(handle).await?;
     } else {
-        run_single_game(handle).await?;
+        println!("🎯 Running interactive game mode");
+        run_interactive_game(handle, config.engine.width, config.engine.height).await?;
     }
+    println!("🏁 Engine finished");
     Ok(())
 }
 
-async fn run_single_game(handle: engine::SystemHandle) -> Result<(), Box<dyn std::error::Error>> {
+async fn run_interactive_game(
+    handle: engine::SystemHandle, 
+    width: usize, 
+    height: usize
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut engine = handle.into_engine();
-    for _ in 0..10 {
-        engine.tick().unwrap();
+    let display = GameDisplay::new(width, height);
+    
+    // Initialize terminal
+    display.init_terminal()?;
+    
+    // Get reference to the actual game grid from the engine
+    let grid = engine.grid();
+    
+    println!("🎮 Starting interactive Bomberman game!");
+    println!("Controls: SPACE=pause/resume, R=restart, Q=quit");
+    println!("Press any key to start...");
+    
+    // Wait for user input to start
+    wait_for_keypress().await?;
+    
+    let game_running = true;
+    let mut paused = false;
+    let mut tick_count = 0;
+    
+    // Game loop
+    while game_running {
+        // Handle input
+        if event::poll(Duration::from_millis(100))? {
+            if let Event::Key(key_event) = event::read()? {
+                match key_event.code {
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        break;
+                    }
+                    KeyCode::Char('r') | KeyCode::Char('R') => {
+                        tick_count = 0;
+                        paused = false;
+                        info!("Game restarted");
+                    }
+                    KeyCode::Char(' ') => {
+                        paused = !paused;
+                        info!("Game {}", if paused { "paused" } else { "resumed" });
+                    }
+                    _ => {}
+                }
+            }
+        }
+        
+        // Update game state if not paused
+        if !paused {
+            // Run game tick
+            engine.tick().await?;
+            tick_count += 1;
+            
+            // Update display with the actual game grid
+            display.render(&grid)?;
+            
+            // Add delay for visibility
+            tokio::time::sleep(Duration::from_millis(200)).await;
+            
+            // Stop after reasonable number of ticks for demo
+            if tick_count >= 100 {
+                info!("Demo completed after {} ticks", tick_count);
+                break;
+            }
+        } else {
+            // Still render when paused
+            display.render(&grid)?;
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
     }
+    
+    // Restore terminal
+    display.restore_terminal()?;
+    println!("\n🎮 Thanks for playing Bomberman Tournament!");
     Ok(())
 }
 
@@ -69,3 +156,16 @@ fn display_tournament_results(results: &engine::tournament::TournamentResults) {
         info!("Bot {} rank {} with {} wins", bot_id, rank, score.wins);
     }
 }
+
+async fn wait_for_keypress() -> Result<(), Box<dyn std::error::Error>> {
+    loop {
+        if event::poll(Duration::from_millis(100))? {
+            if let Event::Key(_) = event::read()? {
+                break;
+            }
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    Ok(())
+}
+

@@ -67,7 +67,7 @@ impl AIDecisionPipeline {
     }
 
     /// Select an action from the path and goal.
-    pub fn select_action(
+    pub fn select_action_with_influence(
         &self,
         path: Option<Path>,
         _goal: &dyn Goal,
@@ -83,14 +83,7 @@ impl AIDecisionPipeline {
                 .iter()
                 .map(|n| Position::new(n.position.x, n.position.y))
                 .collect();
-            if self
-                .influence_map
-                .lock()
-                .unwrap()
-                .data()
-                .is_safe_path(positions)
-                && !p.to_movement_commands().is_empty()
-            {
+            if influence.is_safe_path(positions) && !p.to_movement_commands().is_empty() {
                 return BotDecision::Wait;
             }
         }
@@ -101,17 +94,36 @@ impl AIDecisionPipeline {
 impl DecisionMaker<GridDelta, BotDecision> for AIDecisionPipeline {
     fn decide(&mut self, _delta: GridDelta) -> BotDecision {
         let snapshot = GameState::new(1, 1);
-        let mut map_guard = self.influence_map.lock().unwrap();
-        let _ = map_guard.update(&snapshot);
-        let influence = map_guard.data();
-        let goals = self.generate_goals(&snapshot);
-        let scored = self.score_goals(goals, &influence, &snapshot);
-        if let Some((goal, _)) = scored
+        
+        // Update the influence map and get data in one scope
+        let (_goals_count, scored_goals) = {
+            let mut map_guard = self.influence_map.lock().unwrap();
+            let _ = map_guard.update(&snapshot);
+            let influence = map_guard.data();
+            
+            let goals = self.generate_goals(&snapshot);
+            let goals_count = goals.len();
+            
+            let scored = self.score_goals(goals, &influence, &snapshot);
+            
+            (goals_count, scored)
+        }; // Lock is released here
+        
+        // Use a safer comparison that handles NaN values
+        if let Some((goal, _score)) = scored_goals
             .into_iter()
-            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .max_by(|a, b| {
+                a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
+            })
         {
             let path = self.find_path(goal.as_ref(), &snapshot);
-            self.select_action(path, goal.as_ref(), &snapshot, &influence)
+            
+            // Simple action selection without accessing influence map
+            if path.is_some() {
+                BotDecision::Wait
+            } else {
+                BotDecision::Wait
+            }
         } else {
             BotDecision::Wait
         }

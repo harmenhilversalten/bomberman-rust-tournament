@@ -1,0 +1,33 @@
+[engine]
+width = 13
+height = 11
+tick_rate = 60
+
+[engine.rules]
+max_players = 4
+bomb_timer = 3
+starting_lives = 3
+
+[event_bus]
+buffer_size = 1000
+max_subscribers = 100
+
+[[bots]]
+name = "TestBot1"
+ai_type = "heuristic"
+rl_mode = false
+decision_timeout_ms = 1000
+
+[[bots]]
+name = "TestBot2"
+ai_type = "heuristic"
+rl_mode = false
+decision_timeout_ms = 1000
+
+[ai]
+
+[bombs]
+
+[logging]
+level = "info"
+

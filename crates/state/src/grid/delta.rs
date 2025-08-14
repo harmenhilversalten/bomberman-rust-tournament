@@ -21,4 +21,6 @@ pub enum GridDelta {
     AddBomb(Bomb),
     /// Add an agent to the grid.
     AddAgent(AgentState),
+    /// Move an agent to a new position.
+    MoveAgent(usize, (u16, u16)),
 }

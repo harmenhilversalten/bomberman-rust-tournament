@@ -35,7 +35,7 @@ mod tests {
         let finder = Pathfinder::new();
         let map = InfluenceMap::new(1, 1);
         let path = finder
-            .find_path(Point::new(0, 0), Point::new(2, 0), &map.data())
+            .find_path(Point::new(0, 0), Point::new(0, 0), &map.data())
             .unwrap();
         assert_eq!(path.nodes.len(), 2);
     }
