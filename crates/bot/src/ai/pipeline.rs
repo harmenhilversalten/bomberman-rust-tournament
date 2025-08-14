@@ -96,7 +96,7 @@ impl DecisionMaker<GridDelta, BotDecision> for AIDecisionPipeline {
         let snapshot = GameState::new(1, 1);
         
         // Update the influence map and get data in one scope
-        let (goals_count, scored_goals) = {
+        let (_goals_count, scored_goals) = {
             let mut map_guard = self.influence_map.lock().unwrap();
             let _ = map_guard.update(&snapshot);
             let influence = map_guard.data();
@@ -110,7 +110,7 @@ impl DecisionMaker<GridDelta, BotDecision> for AIDecisionPipeline {
         }; // Lock is released here
         
         // Use a safer comparison that handles NaN values
-        if let Some((goal, score)) = scored_goals
+        if let Some((goal, _score)) = scored_goals
             .into_iter()
             .max_by(|a, b| {
                 a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
