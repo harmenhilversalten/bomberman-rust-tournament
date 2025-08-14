@@ -1,3 +1,5 @@
+use std::fs::File;
+use std::io::Write;
 use engine::{SystemInitializer, TournamentManager, UnifiedConfig, display::GameDisplay};
 use log::info;
 use std::sync::{Arc, RwLock};
@@ -92,6 +94,8 @@ async fn run_interactive_game(
             
             // Update display with the actual game grid
             display.render(&grid)?;
+            let current_grid_snapshot = grid.read().unwrap().snapshot();
+            info!("Tick: {}, Player 1 Pos: ({}, {}), Active Bombs: {}", tick_count, current_grid_snapshot.agents().iter().find(|a| a.id == 0).map_or("N/A".to_string(), |a| a.position.0.to_string()), current_grid_snapshot.agents().iter().find(|a| a.id == 0).map_or("N/A".to_string(), |a| a.position.1.to_string()), current_grid_snapshot.bombs().len());
             
             // Add delay for visibility
             tokio::time::sleep(Duration::from_millis(200)).await;

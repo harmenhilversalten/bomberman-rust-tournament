@@ -7,7 +7,7 @@ use crate::{
     simulation::{DeterminismChecker, Replay, ReplayRecorder},
     systems::System,
 };
-use ::bot::BotConfig;
+use ::bot::{BotConfig, Direction};
 use crossbeam::channel::Receiver;
 use events::{
     bus::{EventBus, EventFilter},
@@ -139,7 +139,24 @@ impl Engine {
     fn handle_bot_command(&mut self, cmd: BotEvent) -> Result<(), BotError> {
         match cmd {
             BotEvent::Decision { bot_id, decision } => match decision {
-                BotDecision::Wait => Ok(()),
+                BotDecision::Move(direction) => {
+                    let mut grid = self.grid.write().expect("grid lock poisoned");
+                    if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
+                        let (mut x, mut y) = agent.position;
+                        match direction {
+                            bot::Direction::Up => y = y.saturating_sub(1),
+                            bot::Direction::Down => y = y.saturating_add(1),
+                            bot::Direction::Left => x = x.saturating_sub(1),
+                            bot::Direction::Right => x = x.saturating_add(1),
+                        }
+                        agent.position = (x, y);
+                        let delta = GridDelta::MoveAgent(bot_id, (x, y));
+                        self.replay_recorder.record(delta.clone());
+                        let _ = self.delta_tx.send(delta.clone());
+                        self.events.broadcast(Event::Grid(delta));
+                    }
+                    Ok(())
+                }
                 BotDecision::PlaceBomb => {
                     let bomb = Bomb::new(bot_id, (0, 0), 3, 1);
                     let delta = GridDelta::AddBomb(bomb);
@@ -164,6 +181,12 @@ impl Engine {
             .spawn_bot(config, Arc::clone(&self.events))?;
         let id = handle.id;
         self.bots.push(handle);
+        // Add agent to the game grid
+        let agent_state = state::components::AgentState::new(id, (0, 0)); // Default position for now
+        {
+            let mut grid = self.grid.write().expect("grid lock poisoned");
+            grid.add_agent(agent_state);
+        }
         Ok(id)
     }
 
