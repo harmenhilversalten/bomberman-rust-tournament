@@ -47,8 +47,8 @@ async fn run_interactive_game(
     // Initialize terminal
     display.init_terminal()?;
     
-    // Get reference to game grid for display
-    let grid = Arc::new(RwLock::new(state::GameGrid::new(width, height)));
+    // Get reference to the actual game grid from the engine
+    let grid = engine.grid();
     
     println!("🎮 Starting interactive Bomberman game!");
     println!("Controls: SPACE=pause/resume, R=restart, Q=quit");
@@ -90,7 +90,7 @@ async fn run_interactive_game(
             engine.tick().await?;
             tick_count += 1;
             
-            // Update display
+            // Update display with the actual game grid
             display.render(&grid)?;
             
             // Add delay for visibility
