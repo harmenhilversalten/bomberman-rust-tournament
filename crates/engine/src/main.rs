@@ -4,28 +4,47 @@ use log::info;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
+    println!("Starting Bomberman engine...");
+    
     let config_path = std::env::args()
         .nth(1)
         .unwrap_or_else(|| "config/default.toml".to_string());
+    println!("Loading config from: {}", config_path);
+    
     let mut config = UnifiedConfig::from_file(&config_path)?;
     config = config.with_env_overrides()?;
+    println!("Configuration loaded successfully");
     info!("Loaded configuration from {}", config_path);
+    
+    println!("Initializing system...");
     let mut initializer = SystemInitializer::new(config);
     let handle = initializer.initialize().await?;
+    println!("System initialized successfully");
     info!("System initialized successfully");
+    
     if handle.has_tournament() {
+        println!("Running tournament mode");
         run_tournament(handle).await?;
     } else {
+        println!("Running single game mode");
         run_single_game(handle).await?;
     }
+    println!("Engine finished");
     Ok(())
 }
 
 async fn run_single_game(handle: engine::SystemHandle) -> Result<(), Box<dyn std::error::Error>> {
     let mut engine = handle.into_engine();
-    for _ in 0..10 {
+    info!("Starting single game with {} ticks", 10);
+    for tick in 0..10 {
+        info!("Running tick {}", tick);
         engine.tick().await.unwrap();
+        info!("Completed tick {}", tick);
+        
+        // Add a small delay to make the ticks visible
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
     }
+    info!("Game completed successfully");
     Ok(())
 }
 
