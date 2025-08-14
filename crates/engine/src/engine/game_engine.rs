@@ -152,7 +152,6 @@ impl Engine {
                             common::Direction::Right => x = x.saturating_add(1),
                         }
                         agent.position = (x, y);
-                        log::info!("Agent {} moved to ({}, {})", bot_id, x, y);
                         let delta = GridDelta::MoveAgent(bot_id, (x, y));
                         self.replay_recorder.record(delta.clone());
                         let _ = self.delta_tx.send(delta.clone());
@@ -186,12 +185,13 @@ impl Engine {
         self.bots.push(handle);
         // Add agent to the game grid
         let agent_state = state::components::AgentState::new(id, (0, 0)); // Default position for now
+        let delta = GridDelta::AddAgent(agent_state);
         {
             let mut grid = self.grid.write().expect("grid lock poisoned");
-            grid.add_agent(agent_state);
+            grid.apply_delta(delta.clone());
         }
-        Ok(id)
-    }
+        self.replay_recorder.record(delta);
+        Ok(id)    }
 
     /// Remove a bot from the engine.
     pub fn remove_bot(&mut self, bot_id: BotId) -> Result<(), BotError> {
