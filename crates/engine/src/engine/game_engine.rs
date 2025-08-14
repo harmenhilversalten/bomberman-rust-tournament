@@ -107,8 +107,8 @@ impl Engine {
     }
 
     /// Advances the game by a single tick by running all registered systems.
-    pub fn tick(&mut self) -> Result<(), EngineError> {
-        self.scheduler.run();
+    pub async fn tick(&mut self) -> Result<(), EngineError> {
+        self.scheduler.run().await;
         self.events.process();
         while let Ok(Event::Bot(cmd)) = self.bot_command_rx.try_recv() {
             let bot_id = match &cmd {

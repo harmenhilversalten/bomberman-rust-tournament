@@ -15,20 +15,13 @@ struct ScheduledTask {
 /// Simple task scheduler executing tasks in dependency order and running
 /// independent tasks in parallel using Tokio.
 pub struct TaskScheduler {
-    runtime: tokio::runtime::Runtime,
     tasks: HashMap<String, ScheduledTask>,
 }
 
 impl TaskScheduler {
-    /// Create a new scheduler with a multi-threaded Tokio runtime.
+    /// Create a new scheduler.
     pub fn new() -> Self {
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .worker_threads(num_cpus::get())
-            .enable_all()
-            .build()
-            .expect("failed to build runtime");
         Self {
-            runtime,
             tasks: HashMap::new(),
         }
     }
@@ -58,7 +51,7 @@ impl TaskScheduler {
     ///
     /// Tasks with no dependencies at the same stage are run in parallel
     /// when marked as `parallelizable`.
-    pub fn run(&self) {
+    pub async fn run(&self) {
         let mut indegree: HashMap<String, usize> =
             self.tasks.keys().map(|k| (k.clone(), 0)).collect();
         let mut dependents: HashMap<String, Vec<String>> = HashMap::new();
@@ -79,45 +72,43 @@ impl TaskScheduler {
             .collect();
         let mut executed = HashSet::new();
 
-        self.runtime.block_on(async {
-            while !ready.is_empty() {
-                let mut batch = Vec::new();
-                while let Some(name) = ready.pop_front() {
-                    if executed.insert(name.clone()) {
-                        batch.push(name);
-                    }
+        while !ready.is_empty() {
+            let mut batch = Vec::new();
+            while let Some(name) = ready.pop_front() {
+                if executed.insert(name.clone()) {
+                    batch.push(name);
                 }
+            }
 
-                let mut joins = Vec::new();
-                for name in &batch {
-                    let task = self.tasks.get(name).expect("task must exist");
-                    let func = Arc::clone(&task.task);
-                    if task.parallelizable {
-                        joins.push(tokio::spawn(async move {
-                            (func)();
-                        }));
-                    } else {
+            let mut joins = Vec::new();
+            for name in &batch {
+                let task = self.tasks.get(name).expect("task must exist");
+                let func = Arc::clone(&task.task);
+                if task.parallelizable {
+                    joins.push(tokio::spawn(async move {
                         (func)();
-                    }
+                    }));
+                } else {
+                    (func)();
                 }
-                for join in joins {
-                    let _ = join.await;
-                }
+            }
+            for join in joins {
+                let _ = join.await;
+            }
 
-                for name in batch {
-                    if let Some(children) = dependents.get(&name) {
-                        for child in children {
-                            if let Some(d) = indegree.get_mut(child) {
-                                *d -= 1;
-                                if *d == 0 {
-                                    ready.push_back(child.clone());
-                                }
+            for name in batch {
+                if let Some(children) = dependents.get(&name) {
+                    for child in children {
+                        if let Some(d) = indegree.get_mut(child) {
+                            *d -= 1;
+                            if *d == 0 {
+                                ready.push_back(child.clone());
                             }
                         }
                     }
                 }
             }
-        });
+        }
     }
 }
 
