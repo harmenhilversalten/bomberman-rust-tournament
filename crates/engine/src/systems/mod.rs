@@ -39,8 +39,8 @@ mod tests {
     use crate::{config::EngineConfig, engine::Engine};
     use state::grid::Tile;
 
-    #[test]
-    fn systems_interact_on_grid() {
+    #[tokio::test]
+    async fn systems_interact_on_grid() {
         let cfg = EngineConfig {
             width: 2,
             height: 2,
@@ -53,7 +53,7 @@ mod tests {
         engine.add_system(Box::new(ExplosionSystem::new()));
         engine.add_system(Box::new(PowerupSystem::new()));
 
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
 
         let grid_arc = engine.grid();
         let grid = grid_arc.read().unwrap();

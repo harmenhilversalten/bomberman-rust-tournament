@@ -1,6 +1,5 @@
 use engine::{SystemInitializer, TournamentManager, UnifiedConfig, display::GameDisplay};
 use log::info;
-use std::io::{self, Read};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use crossterm::event::{self, Event, KeyCode};
@@ -58,7 +57,7 @@ async fn run_interactive_game(
     // Wait for user input to start
     wait_for_keypress().await?;
     
-    let mut game_running = true;
+    let game_running = true;
     let mut paused = false;
     let mut tick_count = 0;
     
@@ -69,7 +68,6 @@ async fn run_interactive_game(
             if let Event::Key(key_event) = event::read()? {
                 match key_event.code {
                     KeyCode::Char('q') | KeyCode::Char('Q') => {
-                        game_running = false;
                         break;
                     }
                     KeyCode::Char('r') | KeyCode::Char('R') => {
@@ -113,21 +111,6 @@ async fn run_interactive_game(
     // Restore terminal
     display.restore_terminal()?;
     println!("\n🎮 Thanks for playing Bomberman Tournament!");
-    Ok(())
-}
-
-async fn run_single_game(handle: engine::SystemHandle) -> Result<(), Box<dyn std::error::Error>> {
-    let mut engine = handle.into_engine();
-    info!("Starting single game with {} ticks", 10);
-    for tick in 0..10 {
-        info!("Running tick {}", tick);
-        engine.tick().await.unwrap();
-        info!("Completed tick {}", tick);
-        
-        // Add a small delay to make the ticks visible
-        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-    }
-    info!("Game completed successfully");
     Ok(())
 }
 

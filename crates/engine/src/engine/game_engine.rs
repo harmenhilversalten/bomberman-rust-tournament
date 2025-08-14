@@ -259,8 +259,8 @@ mod tests {
         atomic::{AtomicBool, Ordering},
     };
 
-    #[test]
-    fn tick_broadcasts_system_delta() {
+    #[tokio::test]
+    async fn tick_broadcasts_system_delta() {
         use crate::{config::EngineConfig, systems::MovementSystem};
 
         let config = EngineConfig {
@@ -271,15 +271,15 @@ mod tests {
         let (mut engine, mut rx, _events) = Engine::new(config);
         engine.add_system(Box::new(MovementSystem::new()));
         assert_eq!(*rx.borrow(), GridDelta::None);
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert!(matches!(
             rx.borrow_and_update().clone(),
             GridDelta::SetTile { x: 0, y: 0, .. }
         ));
     }
 
-    #[test]
-    fn tick_runs_scheduler_tasks() {
+    #[tokio::test]
+    async fn tick_runs_scheduler_tasks() {
         use crate::config::EngineConfig;
         let config = EngineConfig {
             width: 1,
@@ -292,7 +292,7 @@ mod tests {
         engine.add_task("flag", vec![], true, move || {
             flag_clone.store(true, Ordering::SeqCst);
         });
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert!(flag.load(Ordering::SeqCst));
     }
 
@@ -311,8 +311,8 @@ mod tests {
         assert_eq!(engine.config().height, 3);
     }
 
-    #[test]
-    fn tick_emits_game_event() {
+    #[tokio::test]
+    async fn tick_emits_game_event() {
         use crate::config::EngineConfig;
         let cfg = EngineConfig {
             width: 1,
@@ -321,15 +321,15 @@ mod tests {
         };
         let (mut engine, _rx, events) = Engine::new(cfg);
         let (_id, rx_event) = events.subscribe();
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert_eq!(
             rx_event.try_recv().unwrap(),
             Event::Game(GameEvent::TickCompleted { tick: 1 })
         );
     }
 
-    #[test]
-    fn tick_broadcasts_grid_event() {
+    #[tokio::test]
+    async fn tick_broadcasts_grid_event() {
         use crate::{config::EngineConfig, systems::MovementSystem};
         use events::bus::EventFilter;
         let config = EngineConfig {
@@ -341,12 +341,12 @@ mod tests {
         engine.add_system(Box::new(MovementSystem::new()));
         let filter = EventFilter::new(|e| matches!(e, Event::Grid(_)));
         let (_id, rx_event) = events.subscribe_with_filter(Some(filter));
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert!(matches!(rx_event.try_recv().unwrap(), Event::Grid(_)));
     }
 
-    #[test]
-    fn engine_processes_bot_commands() {
+    #[tokio::test]
+    async fn engine_processes_bot_commands() {
         use crate::config::EngineConfig;
         let cfg = EngineConfig {
             width: 1,
@@ -361,15 +361,15 @@ mod tests {
             }),
             EventPriority::Normal,
         );
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         assert!(matches!(
             rx.borrow_and_update().clone(),
             GridDelta::AddBomb(_)
         ));
     }
 
-    #[test]
-    fn bomb_system_emits_event() {
+    #[tokio::test]
+    async fn bomb_system_emits_event() {
         use crate::{config::EngineConfig, systems::BombSystem};
         let cfg = EngineConfig {
             width: 1,
@@ -379,7 +379,7 @@ mod tests {
         let (mut engine, _rx, events) = Engine::new(cfg);
         engine.add_system(Box::new(BombSystem::new()));
         let (_id, rx_event) = events.subscribe();
-        engine.tick().unwrap();
+        engine.tick().await.unwrap();
         // Ensure some event was emitted
         assert!(rx_event.try_recv().is_ok());
     }
