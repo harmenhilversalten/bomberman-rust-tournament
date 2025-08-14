@@ -3,8 +3,8 @@
 /// Identifier for a bot instance.
 pub type BotId = usize;
 
+use common::Direction;
 use serde::{Deserialize, Serialize};
-use bot;
 
 /// Decisions that a bot might produce.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -12,7 +12,7 @@ pub enum BotDecision {
     /// Bot chose to wait.
     Wait,
     /// Bot decided to move.
-    Move(bot::Direction),
+    Move(Direction),
     /// Bot decided to place a bomb.
     PlaceBomb,
 }
