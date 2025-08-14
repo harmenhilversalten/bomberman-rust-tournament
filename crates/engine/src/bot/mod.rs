@@ -37,19 +37,13 @@ impl BotHandle {
 
 /// Manager responsible for spawning and tracking bots.
 pub struct BotManager {
-    runtime: tokio::runtime::Runtime,
     next_id: AtomicUsize,
 }
 
 impl BotManager {
     /// Create a new [`BotManager`].
     pub fn new() -> Self {
-        let runtime = tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
-            .expect("runtime");
         Self {
-            runtime,
             next_id: AtomicUsize::new(0),
         }
     }
@@ -72,7 +66,7 @@ impl BotManager {
 
     /// Run the decision loop for a bot asynchronously.
     pub fn run_bot_decision_loop(&self, bot: KernelBot) -> JoinHandle<BotState> {
-        self.runtime.spawn(async move { bot.run() })
+        tokio::spawn(async move { bot.run() })
     }
 }
 
