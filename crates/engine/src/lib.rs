@@ -4,6 +4,7 @@
 pub mod bot;
 pub mod config;
 pub mod coord;
+pub mod display;
 pub mod engine;
 pub mod map;
 pub mod shrink;
