@@ -39,11 +39,33 @@ mod tests {
     use crate::bot::decision::DecisionMaker;
 
     #[test]
+    fn test_influence_map_creation() {
+        let im = InfluenceMap::new(1, 1);
+        let im_arc = Arc::new(Mutex::new(im));
+        
+        {
+            let mut guard = im_arc.lock().unwrap();
+            let state = state::GameState::new(1, 1);
+            let result = guard.update(&state);
+            assert!(result.is_ok());
+        }
+    }
+
+    #[test]
+    fn test_heuristic_ai_constructor() {
+        let gm = Arc::new(GoalManager::new());
+        let pf = Arc::new(Pathfinder::new());
+        let im = Arc::new(Mutex::new(InfluenceMap::new(1, 1)));
+        let _ai = HeuristicAI::new(gm, pf, im);
+    }
+
+    #[test]
     fn heuristic_ai_uses_pipeline() {
         let gm = Arc::new(GoalManager::new());
         let pf = Arc::new(Pathfinder::new());
         let im = Arc::new(Mutex::new(InfluenceMap::new(1, 1)));
         let mut ai = HeuristicAI::new(gm, pf, im);
-        assert_eq!(ai.decide(GridDelta::None), BotDecision::Wait);
+        let result = ai.decide(GridDelta::None);
+        assert_eq!(result, BotDecision::Wait);
     }
 }

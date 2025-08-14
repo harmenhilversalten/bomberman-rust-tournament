@@ -4,15 +4,11 @@ mod heuristic_ai;
 mod pipeline;
 mod planning_ai;
 mod reactive_ai;
-#[cfg(feature = "rl")]
-mod rl_ai;
 
 pub use heuristic_ai::HeuristicAI;
 pub use pipeline::AIDecisionPipeline;
 pub use planning_ai::PlanningAI;
 pub use reactive_ai::ReactiveAI;
-#[cfg(feature = "rl")]
-pub use rl_ai::RLAI;
 
 /// Available AI strategy types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -26,4 +26,3 @@ criterion = { workspace = true }
 [features]
 default = ["tournament"]
 tournament = []
-rl = ["bot/rl"]

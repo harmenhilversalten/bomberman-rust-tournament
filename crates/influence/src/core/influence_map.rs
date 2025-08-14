@@ -9,7 +9,7 @@ use super::{
     layer::InfluenceLayer,
     opportunity::{OpportunityMap, OpportunitySource},
 };
-use crate::update::{DirtyTracker, IncrementalUpdate, UpdateStrategy};
+use crate::update::{DirtyTracker, FullUpdate, UpdateStrategy};
 
 /// Types of influence layers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -68,7 +68,7 @@ impl InfluenceMap {
             height,
             layers,
             dirty: DirtyTracker::new(),
-            strategy: Box::new(IncrementalUpdate::new()),
+            strategy: Box::new(FullUpdate::new()),
         }
     }
 
