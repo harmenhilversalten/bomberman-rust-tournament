@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn switching_between_strategies_changes_behavior() {
         let gm = std::sync::Arc::new(goals::GoalManager::new());
-        let pf = std::sync::Arc::new(path::Pathfinder::new());
+        let pf = std::sync::Arc::new(std::sync::Mutex::new(path::Pathfinder::new()));
         let im = std::sync::Arc::new(std::sync::Mutex::new(influence::map::InfluenceMap::new(
             1, 1,
         )));

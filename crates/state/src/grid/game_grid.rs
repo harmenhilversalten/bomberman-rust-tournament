@@ -80,12 +80,12 @@ impl GameGrid {
         let spawn_positions = [
             (3, 3),                    // Top-left
             (width / 2, 3),            // Top-center
-            (width - 4, 3),            // Top-right
+            (width.saturating_sub(4), 3),            // Top-right
             (3, height / 2),           // Middle-left
-            (width - 4, height / 2),   // Middle-right
-            (3, height - 4),           // Bottom-left
-            (width / 2, height - 4),   // Bottom-center
-            (width - 4, height - 4),   // Bottom-right
+            (width.saturating_sub(4), height / 2),   // Middle-right
+            (3, height.saturating_sub(4)),           // Bottom-left
+            (width / 2, height.saturating_sub(4)),   // Bottom-center
+            (width.saturating_sub(4), height.saturating_sub(4)),   // Bottom-right
         ];
         
         for &(spawn_x, spawn_y) in &spawn_positions {

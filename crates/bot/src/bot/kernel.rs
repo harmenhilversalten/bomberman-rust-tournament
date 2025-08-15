@@ -91,6 +91,20 @@ impl Bot {
                     if duration > self.config.decision_timeout {
                         // In future, log or handle long decision times.
                     }
+                    
+                    // Debug output
+                    match &decision {
+                        BotDecision::Move(dir) => {
+                            println!("Bot {} decided to move {:?}", self.config.id, dir);
+                        }
+                        BotDecision::PlaceBomb => {
+                            println!("Bot {} decided to place bomb", self.config.id);
+                        }
+                        BotDecision::Wait => {
+                            // Only print if we're in debug mode or have a way to enable verbose output
+                        }
+                    }
+                    
                     // Emit status if available
                     if let Some(status) = self.ai.status() {
                         self.events.emit(

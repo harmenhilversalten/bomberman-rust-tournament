@@ -158,6 +158,34 @@ impl Engine {
         // This is the key fix - we need to process the event bus to get events from all bots
         self.events.process();
         
+        // Process bot decisions from the event bus
+        // The bots send their decisions via events, not via the channel
+        let mut bot_events = Vec::new();
+        self.events.collect_events(&mut bot_events, |event| {
+            matches!(event, Event::Bot(BotEvent::Decision { .. }))
+        });
+        
+        for event in bot_events {
+            if let Event::Bot(cmd) = event {
+                match &cmd {
+                    BotEvent::Status { bot_id, status } => {
+                        self.bot_status.insert(*bot_id, status.clone());
+                    }
+                    BotEvent::Decision { bot_id, .. } | BotEvent::Error { bot_id, .. } => {
+                        if let Err(e) = self.handle_bot_command(cmd.clone()) {
+                            self.events.emit(
+                                Event::Bot(BotEvent::Error {
+                                    bot_id: *bot_id,
+                                    message: e.to_string(),
+                                }),
+                                EventPriority::Normal,
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        
 
         
         let grid = self
@@ -174,66 +202,125 @@ impl Engine {
 
     fn handle_bot_command(&mut self, cmd: BotEvent) -> Result<(), BotError> {
         match cmd {
-            BotEvent::Decision { bot_id, decision } => match decision {
-                BotDecision::Wait => Ok(()),
-                BotDecision::Move(direction) => {
-                    // Check movement cooldown (200ms between movements)
-                    let now = std::time::Instant::now();
-                    let default_time = std::time::Instant::now();
-                    let last_move = self.movement_cooldowns.get(&bot_id).unwrap_or(&default_time);
-                    if now.duration_since(*last_move).as_millis() < 200 {
-                        return Ok(()); // Still in cooldown
-                    }
-                    
-                    let mut grid = self.grid.write().expect("grid lock poisoned");
-                    
-                    // Find the agent and calculate new position
-                    let mut new_position = None;
-                    if let Some(agent) = grid.agents().iter().find(|a| a.id == bot_id) {
-                        let (mut x, mut y) = agent.position;
-                        let old_pos = (x, y);
-                        
-                        // Calculate new position
-                        match direction {
-                            common::Direction::Up => y = y.saturating_sub(1),
-                            common::Direction::Down => y = y.saturating_add(1).min(self.config.height as u16 - 1),
-                            common::Direction::Left => x = x.saturating_sub(1),
-                            common::Direction::Right => x = x.saturating_add(1).min(self.config.width as u16 - 1),
+            BotEvent::Decision { bot_id, decision } => {
+                println!("Processing decision for bot {}: {:?}", bot_id, decision);
+                match decision {
+                    BotDecision::Wait => Ok(()),
+                    BotDecision::Move(direction) => {
+                        // Check movement cooldown (200ms between movements)
+                        let now = std::time::Instant::now();
+                        let default_time = std::time::Instant::now();
+                        let last_move = self.movement_cooldowns.get(&bot_id).unwrap_or(&default_time);
+                        if now.duration_since(*last_move).as_millis() < 200 {
+                            println!("Bot {} is in movement cooldown", bot_id);
+                            return Ok(()); // Still in cooldown
                         }
                         
-                        // Only move if position actually changed and is valid
-                        if (x, y) != old_pos && self.is_position_walkable(&grid, (x, y)) {
-                            new_position = Some((x, y));
+                        let mut grid = self.grid.write().expect("grid lock poisoned");
+                        
+                        // Find the agent and calculate new position
+                        let mut new_position = None;
+                        if let Some(agent) = grid.agents().iter().find(|a| a.id == bot_id) {
+                            let (mut x, mut y) = agent.position;
+                            let old_pos = (x, y);
+                            println!("Bot {} current position: ({}, {})", bot_id, x, y);
+                            
+                            // Calculate new position
+                            match direction {
+                                common::Direction::Up => y = y.saturating_sub(1),
+                                common::Direction::Down => y = y.saturating_add(1).min(self.config.height as u16 - 1),
+                                common::Direction::Left => x = x.saturating_sub(1),
+                                common::Direction::Right => x = x.saturating_add(1).min(self.config.width as u16 - 1),
+                            }
+                            println!("Bot {} new position: ({}, {})", bot_id, x, y);
+                            
+                            // Only move if position actually changed and is valid
+                            if (x, y) != old_pos && self.is_position_walkable(&grid, (x, y)) {
+                                println!("Bot {} position is walkable", bot_id);
+                                new_position = Some((x, y));
+                            } else {
+                                println!("Bot {} position ({}, {}) is not walkable", bot_id, x, y);
+                                if (x, y) == old_pos {
+                                    println!("  Position didn't change");
+                                }
+                                // Let's check what's at this position
+                                if x < self.config.width as u16 && y < self.config.height as u16 {
+                                    let tiles = grid.tiles();
+                                    let index = (y as usize) * self.config.width + (x as usize);
+                                    if index < tiles.len() {
+                                        println!("  Tile at ({}, {}): {:?}", x, y, tiles[index]);
+                                    }
+                                }
+                                // Check for other agents
+                                for agent in grid.agents() {
+                                    if agent.position == (x, y) {
+                                        println!("  Agent {} is at position ({}, {})", agent.id, x, y);
+                                    }
+                                }
+                            }
                         }
+                        
+                        // Apply the movement if valid
+                        if let Some(new_pos) = new_position {
+                            println!("Moving bot {} to ({}, {})", bot_id, new_pos.0, new_pos.1);
+                            if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
+                                agent.position = new_pos;
+                                let delta = GridDelta::MoveAgent(bot_id, new_pos);
+                                self.replay_recorder.record(delta.clone());
+                                let _ = self.delta_tx.send(delta.clone());
+                                self.events.broadcast(Event::Grid(delta));
+                                
+                                // Update movement cooldown
+                                self.movement_cooldowns.insert(bot_id, now);
+                            }
+                        }
+                        Ok(())
                     }
-                    
-                    // Apply the movement if valid
-                    if let Some(new_pos) = new_position {
+                    BotDecision::PlaceBomb => {
+                        println!("Bot {} placing bomb", bot_id);
+                        let mut grid = self.grid.write().expect("grid lock poisoned");
                         if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
-                            agent.position = new_pos;
-                            let delta = GridDelta::MoveAgent(bot_id, new_pos);
+                            // Check if agent has bombs left
+                            if agent.bombs_left == 0 {
+                                println!("Bot {} has no bombs left", bot_id);
+                                drop(grid);
+                                return Ok(()); // Can't place bomb, no bombs left
+                            }
+                        
+                            let position = agent.position;
+                            
+                            // Decrement bombs left
+                            agent.bombs_left -= 1;
+                            
+                            // Create bomb for the state grid (for display/tracking)
+                            let state_bomb = Bomb::new(bot_id, position, 3, 1);
+                            let delta = GridDelta::AddBomb(state_bomb);
+                            grid.apply_delta(delta.clone());
+                            drop(grid);
+                            
                             self.replay_recorder.record(delta.clone());
                             let _ = self.delta_tx.send(delta.clone());
                             self.events.broadcast(Event::Grid(delta));
                             
-                            // Update movement cooldown
-                            self.movement_cooldowns.insert(bot_id, now);
+                            // Also broadcast bomb placement event for the bomb system to handle
+                            self.events.broadcast(Event::bomb(events::events::BombEvent::Placed {
+                                agent_id: bot_id,
+                                position,
+                            }));
                         }
+                        Ok(())
                     }
-                    Ok(())
                 }
-                BotDecision::PlaceBomb => {
-                    let mut grid = self.grid.write().expect("grid lock poisoned");
-                    if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
-                        // Check if agent has bombs left
-                        if agent.bombs_left == 0 {
-                            drop(grid);
-                            return Ok(()); // Can't place bomb, no bombs left
-                        }
-                        
-                        let position = agent.position;
-                        
-                        // Decrement bombs left
+            },
+            BotEvent::Error { .. } => Ok(()),
+            BotEvent::Status { bot_id, status } => {
+                self.bot_status.insert(bot_id, status);
+                Ok(())
+            }
+        }
+    }
+
+    /// Spawn a bot managed by the engine.
                         agent.bombs_left -= 1;
                         
                         // Create bomb for the state grid (for display/tracking)
@@ -252,7 +339,6 @@ impl Engine {
                             position,
                         }));
                     }
-                    Ok(())
                 }
             },
             BotEvent::Error { .. } => Ok(()),

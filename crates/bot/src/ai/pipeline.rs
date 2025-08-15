@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
 
-use goals::{GoalManager, GoalScorer, GoalPlanner, PlanningStrategy, Action};
-use influence::map::InfluenceMap;
+use goals::{GoalManager, GoalPlanner, PlanningStrategy, Action};
+use influence::map::{InfluenceMap};
 use path::{Pathfinder, Point};
 use state::{GameState, grid::GridDelta, Tile, AgentState, Bomb};
 
@@ -15,7 +15,6 @@ pub struct AIDecisionPipeline {
     planner: GoalPlanner,
     pathfinder: Arc<Mutex<Pathfinder>>,
     influence_map: Arc<Mutex<InfluenceMap>>,
-    scorer: GoalScorer,
     bot_id: Option<usize>,
     current_position: Option<(u16, u16)>,
     grid_width: usize,
@@ -41,7 +40,6 @@ impl AIDecisionPipeline {
             goal_manager,
             pathfinder,
             influence_map,
-            scorer: GoalScorer::new(),
             planner: GoalPlanner::new(PlanningStrategy::HighestScore),
             bot_id: None,
             current_position: None,
@@ -142,7 +140,32 @@ impl AIDecisionPipeline {
 
     /// Build game state from internal representation
     fn build_game_state(&self) -> GameState {
-        GameState::new(self.grid_width, self.grid_height)
+        let mut game_state = GameState::new(self.grid_width, self.grid_height);
+        
+        // Apply all the tiles we've tracked
+        for y in 0..self.grid_height {
+            for x in 0..self.grid_width {
+                let index = y * self.grid_width + x;
+                if index < self.tiles.len() {
+                    let tile = self.tiles[index];
+                    if tile != Tile::Empty {
+                        game_state.apply_delta(GridDelta::SetTile { x, y, tile });
+                    }
+                }
+            }
+        }
+        
+        // Apply all the agents we've tracked
+        for agent in self.agents.values() {
+            game_state.apply_delta(GridDelta::AddAgent(agent.clone()));
+        }
+        
+        // Apply all the bombs we've tracked
+        for bomb in &self.bombs {
+            game_state.apply_delta(GridDelta::AddBomb(bomb.clone()));
+        }
+        
+        game_state
     }
 
     /// Check if position is walkable
@@ -417,10 +440,10 @@ impl AIDecisionPipeline {
         let mut rng = thread_rng();
         let directions = [Direction::Up, Direction::Down, Direction::Left, Direction::Right];
         
-        // More aggressive movement: 70% chance to move, 20% chance to wait, 10% chance to place bomb
+        // More aggressive movement: 60% chance to move, 30% chance to place bomb, 10% chance to wait
         let action_choice: f32 = rng.gen();
         
-        if action_choice < 0.7 {
+        if action_choice < 0.6 {
             // Move in random direction
             if let Some(direction) = directions.choose(&mut rng) {
                 if let Some(current_pos) = self.current_position {
@@ -432,15 +455,66 @@ impl AIDecisionPipeline {
                     }
                 }
             }
+            
+            // If we couldn't find a safe direction, try any walkable direction
+            if let Some(current_pos) = self.current_position {
+                for direction in &directions {
+                    if let Some(new_pos) = self.calculate_new_position(current_pos, *direction) {
+                        if self.is_position_walkable(new_pos) {
+                            self.last_move_time = std::time::Instant::now();
+                            return BotDecision::Move(*direction);
+                        }
+                    }
+                }
+            }
         } else if action_choice < 0.9 {
-            // Place bomb if we haven't recently
+            // Place bomb if we haven't recently and we're in a good position
             if self.last_bomb_time.elapsed().as_millis() > 500 {
-                self.last_bomb_time = std::time::Instant::now();
-                return BotDecision::PlaceBomb;
+                if let Some(current_pos) = self.current_position {
+                    // Check if placing a bomb here would be effective
+                    if self.is_strategic_bomb_position(current_pos) {
+                        self.last_bomb_time = std::time::Instant::now();
+                        return BotDecision::PlaceBomb;
+                    }
+                }
             }
         }
         
         BotDecision::Wait
+    }
+
+    /// Check if current position is good for placing a bomb
+    fn is_strategic_bomb_position(&self, pos: (u16, u16)) -> bool {
+        // Check if we're next to a destructible wall or another player
+        let directions = [
+            (0, -1), // Up
+            (0, 1),  // Down
+            (-1, 0), // Left
+            (1, 0),  // Right
+        ];
+        
+        for (dx, dy) in &directions {
+            let check_x = pos.0 as i32 + dx;
+            let check_y = pos.1 as i32 + dy;
+            
+            // Check bounds
+            if check_x >= 0 && check_y >= 0 && 
+               check_x < self.grid_width as i32 && 
+               check_y < self.grid_height as i32 {
+                
+                let index = check_y as usize * self.grid_width + check_x as usize;
+                if index < self.tiles.len() {
+                    // If there's a destructible wall, this is a good spot
+                    match self.tiles[index] {
+                        state::Tile::SoftCrate => return true,
+                        _ => {}
+                    }
+                }
+            }
+        }
+        
+        // Also check if we're not in immediate danger
+        self.is_position_safe(pos)
     }
 }
 

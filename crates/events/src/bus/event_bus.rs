@@ -79,6 +79,31 @@ impl EventBus {
             }
         }
     }
+
+    /// Collects events matching a predicate into a vector.
+    /// Note: This implementation drains events from the queue that match the predicate.
+    pub fn collect_events<F>(&self, events: &mut Vec<Event>, predicate: F)
+    where
+        F: Fn(&Event) -> bool,
+    {
+        // Create a temporary vector to hold events that don't match the predicate
+        let mut non_matching_events = Vec::new();
+        
+        // Process all pending events
+        while let Some(event) = self.queue.pop() {
+            if predicate(&event) {
+                events.push(event);
+            } else {
+                non_matching_events.push(event);
+            }
+        }
+        
+        // Push back the non-matching events
+        for event in non_matching_events {
+            // We'll push them back with normal priority
+            self.queue.push(event, crate::queue::EventPriority::Normal);
+        }
+    }
 }
 
 impl Default for EventBus {

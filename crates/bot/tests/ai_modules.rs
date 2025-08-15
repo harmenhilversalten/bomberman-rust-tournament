@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 #[test]
 fn heuristic_ai_uses_pipeline() {
     let gm = Arc::new(GoalManager::new());
-    let pf = Arc::new(Pathfinder::new());
+    let pf = Arc::new(Mutex::new(Pathfinder::new()));
     let im = Arc::new(Mutex::new(InfluenceMap::new(1, 1)));
     let mut ai = HeuristicAI::new(gm, pf, im);
     assert_eq!(ai.decide(GridDelta::None), BotDecision::Wait);

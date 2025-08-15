@@ -72,8 +72,9 @@ impl<'a> Grid for InfluenceGrid<'a> {
         let position = influence::map::Position::new(p.x, p.y);
         let danger = self.influence.get_danger_at(position);
         
-        // Consider positions with high danger as unwalkable (walls/obstacles)
-        danger < 100.0
+        // Only consider positions with significant danger as unwalkable
+        // Positions with low danger (like safe spots near bombs) should still be walkable
+        danger < 1.0
     }
 
     fn influence(&self, p: Point) -> i32 {
@@ -83,7 +84,15 @@ impl<'a> Grid for InfluenceGrid<'a> {
         
         let position = influence::map::Position::new(p.x, p.y);
         let danger = self.influence.get_danger_at(position);
-        danger as i32
+        
+        // Convert danger to pathfinding cost
+        // Safe positions (danger <= 0) have low cost
+        // Dangerous positions have high cost
+        if danger <= 0.0 {
+            1 // Base movement cost
+        } else {
+            (1.0 + danger * 10.0) as i32 // Higher cost for dangerous positions
+        }
     }
 }
 
@@ -94,7 +103,7 @@ mod tests {
 
     #[test]
     fn pathfinder_returns_simple_path() {
-        let finder = Pathfinder::new();
+        let mut finder = Pathfinder::new();
         let map = InfluenceMap::new(1, 1);
         let path = finder
             .find_path(Point::new(0, 0), Point::new(0, 0), &map.data())

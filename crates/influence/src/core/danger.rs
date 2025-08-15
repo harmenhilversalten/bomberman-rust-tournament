@@ -57,6 +57,10 @@ impl InfluenceLayer for DangerMap {
     }
 
     fn update(&mut self, _state: &GameState, dirty: &[DirtyRegion]) {
+        // Clear the data first
+        self.data.fill(0.0);
+        
+        // Then recalculate danger for all regions
         for region in dirty {
             for y in region.y..region.y + region.height {
                 for x in region.x..region.x + region.width {
@@ -64,7 +68,10 @@ impl InfluenceLayer for DangerMap {
                     for src in &self.sources {
                         let dist = x.abs_diff(src.x) + y.abs_diff(src.y);
                         if dist <= src.range {
-                            let influence = src.strength * (1.0 - dist as f32 / src.range as f32);
+                            // Calculate influence with proper normalization
+                            // At the source, influence is full strength
+                            // At the edge of range, influence is 0
+                            let influence = src.strength * (1.0 - (dist as f32 / src.range as f32));
                             value += influence;
                         }
                     }

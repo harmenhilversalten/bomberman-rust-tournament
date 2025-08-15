@@ -14,7 +14,7 @@ pub mod error;
 pub mod perception;
 
 pub use action::{Action, ActionExecutor, ActionResult};
-pub use ai::{AiType, HeuristicAI, PlanningAI, ReactiveAI, SwitchingAI};
+pub use ai::{AiType, HeuristicAI, PlanningAI, ReactiveAI, SwitchingAI, AIDecisionPipeline};
 pub use bot::{Bot, BotConfig, BotHandle, BotState, DecisionMaker};
 pub use error::BotError;
 pub use perception::{BotMemory, Observation, PerceptionSystem};
