@@ -209,16 +209,14 @@ impl Engine {
                     
                     // Apply the movement if valid
                     if let Some(new_pos) = new_position {
-                        if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
-                            agent.position = new_pos;
-                            let delta = GridDelta::MoveAgent(bot_id, new_pos);
-                            self.replay_recorder.record(delta.clone());
-                            let _ = self.delta_tx.send(delta.clone());
-                            self.events.broadcast(Event::Grid(delta));
-                            
-                            // Update movement cooldown
-                            self.movement_cooldowns.insert(bot_id, now);
-                        }
+                        let delta = GridDelta::MoveAgent(bot_id, new_pos);
+                        grid.apply_delta(delta.clone());
+                        self.replay_recorder.record(delta.clone());
+                        let _ = self.delta_tx.send(delta.clone());
+                        self.events.broadcast(Event::Grid(delta));
+                        
+                        // Update movement cooldown
+                        self.movement_cooldowns.insert(bot_id, now);
                     }
                     Ok(())
                 }
