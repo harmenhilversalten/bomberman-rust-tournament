@@ -1,4 +1,4 @@
-use crate::goal::{AvoidDangerGoal, CollectPowerUpGoal, Goal};
+use crate::goal::{AvoidDangerGoal, CollectPowerUpGoal, AttackEnemyGoal, DestroyBlocksGoal, Goal};
 use state::GameState;
 
 /// Trait for types that can generate goals from a game snapshot.
@@ -19,11 +19,13 @@ impl GoalManager {
 
     /// Generate the list of currently relevant goals.
     pub fn generate_goals(&self, snapshot: &GameState) -> Vec<Box<dyn Goal>> {
-        // For now include a couple of basic goals.
+        // Generate all available goals for intelligent planning
         let _ = snapshot;
         vec![
-            Box::new(CollectPowerUpGoal) as Box<dyn Goal>,
-            Box::new(AvoidDangerGoal) as Box<dyn Goal>,
+            Box::new(AttackEnemyGoal) as Box<dyn Goal>,  // Highest priority - aggressive play
+            Box::new(DestroyBlocksGoal) as Box<dyn Goal>, // High priority - map control
+            Box::new(AvoidDangerGoal) as Box<dyn Goal>,   // Medium priority - survival
+            Box::new(CollectPowerUpGoal) as Box<dyn Goal>, // Lower priority - power progression
         ]
     }
 }

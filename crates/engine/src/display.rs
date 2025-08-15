@@ -103,7 +103,7 @@ impl GameDisplay {
                 } else if let Some(bomb) = bomb_here {
                     self.render_bomb(&mut stdout, bomb)?;
                 } else {
-                    self.render_tile(&mut stdout, tile)?;
+                    self.render_tile(&mut stdout, &tile)?;
                 }
             }
 
@@ -137,26 +137,25 @@ impl GameDisplay {
     }
 
     /// Render a single tile.
-    fn render_tile(&self, stdout: &mut io::Stdout, tile: Tile) -> io::Result<()> {
+    fn render_tile(&self, stdout: &mut io::Stdout, tile: &Tile) -> io::Result<()> {
         match tile {
             Tile::Empty => {
                 stdout
                     .queue(SetBackgroundColor(Color::Green))?
-                    .queue(SetForegroundColor(Color::DarkGreen))?
                     .queue(Print("  "))?
                     .queue(ResetColor)?;
             }
             Tile::Wall => {
                 stdout
                     .queue(SetBackgroundColor(Color::DarkGrey))?
-                    .queue(SetForegroundColor(Color::White))?
+                    .queue(SetForegroundColor(Color::Black))?
                     .queue(Print("██"))?
                     .queue(ResetColor)?;
             }
             Tile::SoftCrate => {
                 stdout
-                    .queue(SetBackgroundColor(Color::DarkYellow))?
-                    .queue(SetForegroundColor(Color::Yellow))?
+                    .queue(SetBackgroundColor(Color::Rgb { r: 139, g: 69, b: 19 }))? // Brown color
+                    .queue(SetForegroundColor(Color::Rgb { r: 160, g: 82, b: 45 }))? // Darker brown
                     .queue(Print("▓▓"))?
                     .queue(ResetColor)?;
             }
@@ -167,19 +166,20 @@ impl GameDisplay {
                     .queue(Print("⭐"))?
                     .queue(ResetColor)?;
             }
+            Tile::Explosion => {
+                stdout
+                    .queue(SetBackgroundColor(Color::Red))?
+                    .queue(SetForegroundColor(Color::Yellow))?
+                    .queue(Print("💥"))?
+                    .queue(ResetColor)?;
+            }
         }
         Ok(())
     }
 
     /// Render an agent.
     fn render_agent(&self, stdout: &mut io::Stdout, agent: &AgentState) -> io::Result<()> {
-        let (bg_color, fg_color, symbol) = match agent.id {
-            0 => (Color::Blue, Color::White, "P1"),
-            1 => (Color::Red, Color::White, "P2"),
-            2 => (Color::Cyan, Color::Black, "P3"),
-            3 => (Color::Magenta, Color::White, "P4"),
-            _ => (Color::Grey, Color::White, "??"),
-        };
+        let (bg_color, fg_color, symbol) = self.get_player_style(agent.id);
 
         stdout
             .queue(SetBackgroundColor(bg_color))?
@@ -187,6 +187,47 @@ impl GameDisplay {
             .queue(Print(symbol))?
             .queue(ResetColor)?;
         Ok(())
+    }
+
+    /// Get player style (color and symbol) for up to 100 players.
+    fn get_player_style(&self, player_id: usize) -> (Color, Color, String) {
+        let symbol = format!("{:02}", player_id + 1); // 01, 02, 03, ..., 99, 100
+        
+        let (bg_color, fg_color) = match player_id {
+            // First 16 players with distinct colors
+            0 => (Color::Blue, Color::White),
+            1 => (Color::Red, Color::White),
+            2 => (Color::Cyan, Color::Black),
+            3 => (Color::Magenta, Color::White),
+            4 => (Color::Green, Color::Black),
+            5 => (Color::Yellow, Color::Black),
+            6 => (Color::DarkBlue, Color::White),
+            7 => (Color::DarkRed, Color::White),
+            8 => (Color::DarkCyan, Color::White),
+            9 => (Color::DarkMagenta, Color::White),
+            10 => (Color::DarkGreen, Color::White),
+            11 => (Color::DarkYellow, Color::Black),
+            12 => (Color::Grey, Color::Black),
+            13 => (Color::DarkGrey, Color::White),
+            14 => (Color::White, Color::Black),
+            15 => (Color::Black, Color::White),
+            
+            // Players 16-99 with RGB colors for variety
+            _ => {
+                let hue = (player_id * 137) % 360; // Golden angle for good distribution
+                let r = ((hue * 255) / 360) as u8;
+                let g = (((hue + 120) % 360) * 255 / 360) as u8;
+                let b = (((hue + 240) % 360) * 255 / 360) as u8;
+                
+                // Ensure good contrast by checking brightness
+                let brightness = (r as u32 + g as u32 + b as u32) / 3;
+                let fg = if brightness > 128 { Color::Black } else { Color::White };
+                
+                (Color::Rgb { r, g, b }, fg)
+            }
+        };
+        
+        (bg_color, fg_color, symbol)
     }
 
     /// Render a bomb.
@@ -211,17 +252,12 @@ impl GameDisplay {
 
         // Player info
         for (i, agent) in snapshot.agents().iter().enumerate() {
-            let color = match i {
-                0 => Color::Blue,
-                1 => Color::Red,
-                2 => Color::Cyan,
-                3 => Color::Magenta,
-                _ => Color::White,
-            };
+            let (bg_color, fg_color, symbol) = self.get_player_style(i);
 
             stdout
-                .queue(SetForegroundColor(color))?
-                .queue(Print(format!("Player {} ", i + 1)))?
+                .queue(SetBackgroundColor(bg_color))?
+                .queue(SetForegroundColor(fg_color))?
+                .queue(Print(format!(" {} ", symbol)))?
                 .queue(ResetColor)?
                 .queue(Print(format!("- Position: ({}, {}) ", agent.position.0, agent.position.1)))?
                 .queue(Print(format!("Bombs: {} Power: {}", agent.bombs_left, agent.power)))?;

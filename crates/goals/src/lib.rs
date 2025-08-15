@@ -16,7 +16,7 @@ pub mod planner;
 pub mod scoring;
 
 pub use executor::{GoalExecutor, ProgressMonitor};
-pub use goal::{Action, AvoidDangerGoal, BotId, CollectPowerUpGoal, Goal, GoalError, GoalType};
+pub use goal::{Action, AvoidDangerGoal, BotId, CollectPowerUpGoal, Goal, GoalError, GoalType, AttackEnemyGoal, DestroyBlocksGoal};
 pub use hierarchy::{GoalDependency, GoalHierarchy, GoalNode};
 pub use manager::{GoalGenerator, GoalManager};
 pub use planner::{GoalPlanner, PlanningStrategy};

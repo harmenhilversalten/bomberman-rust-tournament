@@ -2,4 +2,9 @@
 pub trait DecisionMaker<Snap, Command>: Send + 'static {
     /// Produce a command for the provided snapshot.
     fn decide(&mut self, snapshot: Snap) -> Command;
+
+    /// Optional human-readable status string describing current intent/goal.
+    fn status(&self) -> Option<String> {
+        None
+    }
 }

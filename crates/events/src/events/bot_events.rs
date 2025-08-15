@@ -27,6 +27,13 @@ pub enum BotEvent {
         /// Decision made.
         decision: BotDecision,
     },
+    /// Status update from a bot (e.g., current goal label).
+    Status {
+        /// Identifier of the bot.
+        bot_id: BotId,
+        /// Human-readable status text (e.g., current goal).
+        status: String,
+    },
     /// An error occurred for a bot.
     Error {
         /// Identifier of the bot.

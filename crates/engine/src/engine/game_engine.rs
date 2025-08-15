@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex, RwLock};
+use std::collections::HashMap;
 
 use super::scheduler::TaskScheduler;
 use crate::{
@@ -8,7 +9,7 @@ use crate::{
     systems::System,
 };
 use ::bot::BotConfig;
-use common::Direction;
+
 use crossbeam::channel::Receiver;
 use events::{
     bus::{EventBus, EventFilter},
@@ -37,16 +38,18 @@ pub enum EngineError {
 pub struct Engine {
     config: EngineConfig,
     grid: Arc<RwLock<GameGrid>>,
+    bot_manager: BotManager,
+    bots: Vec<BotHandle>,
+    events: Arc<EventBus>,
     delta_tx: watch::Sender<GridDelta>,
     scheduler: TaskScheduler,
     systems: Vec<Arc<Mutex<Box<dyn System>>>>,
     replay_recorder: ReplayRecorder,
     determinism_checker: DeterminismChecker,
-    events: Arc<EventBus>,
-    bot_manager: BotManager,
-    bots: Vec<BotHandle>,
     bot_command_rx: Receiver<Event>,
     tick: u64,
+    bot_status: HashMap<BotId, String>,
+    movement_cooldowns: HashMap<BotId, std::time::Instant>, // Track movement cooldowns
 }
 
 impl Engine {
@@ -72,6 +75,8 @@ impl Engine {
                 bots: Vec::new(),
                 bot_command_rx: cmd_rx,
                 tick: 0,
+                bot_status: std::collections::HashMap::new(),
+                movement_cooldowns: HashMap::new(),
             },
             rx,
             events,
@@ -102,6 +107,8 @@ impl Engine {
                 bots: Vec::new(),
                 bot_command_rx: cmd_rx,
                 tick: 0,
+                bot_status: std::collections::HashMap::new(),
+                movement_cooldowns: HashMap::new(),
             },
             rx,
         )
@@ -111,20 +118,48 @@ impl Engine {
     pub async fn tick(&mut self) -> Result<(), EngineError> {
         self.scheduler.run().await;
         self.events.process();
+        
+        // Send a tick event to prompt bots to make decisions
+        // This ensures bots get regular opportunities to think and act
+        let tick_delta = GridDelta::None; // Use None as a "thinking prompt"
+        
+        // Broadcast to all subscribers (including bots)
+        self.events.broadcast(Event::Grid(tick_delta.clone()));
+        
+        // Also send via the delta channel for any other listeners
+        let _ = self.delta_tx.send(tick_delta);
+        
+        // Process all bot events directly from the event bus
+        // This ensures we get events from ALL bots, not just from a subscription
+        let mut _event_count = 0;
+        
+        // Process any events that might be in the subscription first
         while let Ok(Event::Bot(cmd)) = self.bot_command_rx.try_recv() {
-            let bot_id = match &cmd {
-                BotEvent::Decision { bot_id, .. } | BotEvent::Error { bot_id, .. } => *bot_id,
-            };
-            if let Err(e) = self.handle_bot_command(cmd) {
-                self.events.emit(
-                    Event::Bot(BotEvent::Error {
-                        bot_id,
-                        message: e.to_string(),
-                    }),
-                    EventPriority::Normal,
-                );
+            _event_count += 1;
+            match &cmd {
+                BotEvent::Status { bot_id, status } => {
+                    self.bot_status.insert(*bot_id, status.clone());
+                }
+                BotEvent::Decision { bot_id, .. } | BotEvent::Error { bot_id, .. } => {
+                    if let Err(e) = self.handle_bot_command(cmd.clone()) {
+                        self.events.emit(
+                            Event::Bot(BotEvent::Error {
+                                bot_id: *bot_id,
+                                message: e.to_string(),
+                            }),
+                            EventPriority::Normal,
+                        );
+                    }
+                }
             }
         }
+        
+        // CRITICAL: Process the event bus to ensure ALL events are delivered
+        // This is the key fix - we need to process the event bus to get events from all bots
+        self.events.process();
+        
+
+        
         let grid = self
             .grid
             .read()
@@ -142,37 +177,89 @@ impl Engine {
             BotEvent::Decision { bot_id, decision } => match decision {
                 BotDecision::Wait => Ok(()),
                 BotDecision::Move(direction) => {
+                    // Check movement cooldown (200ms between movements)
+                    let now = std::time::Instant::now();
+                    let default_time = std::time::Instant::now();
+                    let last_move = self.movement_cooldowns.get(&bot_id).unwrap_or(&default_time);
+                    if now.duration_since(*last_move).as_millis() < 200 {
+                        return Ok(()); // Still in cooldown
+                    }
+                    
                     let mut grid = self.grid.write().expect("grid lock poisoned");
-                    if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
+                    
+                    // Find the agent and calculate new position
+                    let mut new_position = None;
+                    if let Some(agent) = grid.agents().iter().find(|a| a.id == bot_id) {
                         let (mut x, mut y) = agent.position;
+                        let old_pos = (x, y);
+                        
+                        // Calculate new position
                         match direction {
                             common::Direction::Up => y = y.saturating_sub(1),
-                            common::Direction::Down => y = y.saturating_add(1),
+                            common::Direction::Down => y = y.saturating_add(1).min(self.config.height as u16 - 1),
                             common::Direction::Left => x = x.saturating_sub(1),
-                            common::Direction::Right => x = x.saturating_add(1),
+                            common::Direction::Right => x = x.saturating_add(1).min(self.config.width as u16 - 1),
                         }
-                        agent.position = (x, y);
-                        let delta = GridDelta::MoveAgent(bot_id, (x, y));
-                        self.replay_recorder.record(delta.clone());
-                        let _ = self.delta_tx.send(delta.clone());
-                        self.events.broadcast(Event::Grid(delta));
+                        
+                        // Only move if position actually changed and is valid
+                        if (x, y) != old_pos && self.is_position_walkable(&grid, (x, y)) {
+                            new_position = Some((x, y));
+                        }
+                    }
+                    
+                    // Apply the movement if valid
+                    if let Some(new_pos) = new_position {
+                        if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
+                            agent.position = new_pos;
+                            let delta = GridDelta::MoveAgent(bot_id, new_pos);
+                            self.replay_recorder.record(delta.clone());
+                            let _ = self.delta_tx.send(delta.clone());
+                            self.events.broadcast(Event::Grid(delta));
+                            
+                            // Update movement cooldown
+                            self.movement_cooldowns.insert(bot_id, now);
+                        }
                     }
                     Ok(())
                 }
                 BotDecision::PlaceBomb => {
-                    let bomb = Bomb::new(bot_id, (0, 0), 3, 1);
-                    let delta = GridDelta::AddBomb(bomb);
-                    {
-                        let mut grid = self.grid.write().expect("grid lock poisoned");
+                    let mut grid = self.grid.write().expect("grid lock poisoned");
+                    if let Some(agent) = grid.agents_mut().iter_mut().find(|a| a.id == bot_id) {
+                        // Check if agent has bombs left
+                        if agent.bombs_left == 0 {
+                            drop(grid);
+                            return Ok(()); // Can't place bomb, no bombs left
+                        }
+                        
+                        let position = agent.position;
+                        
+                        // Decrement bombs left
+                        agent.bombs_left -= 1;
+                        
+                        // Create bomb for the state grid (for display/tracking)
+                        let state_bomb = Bomb::new(bot_id, position, 3, 1);
+                        let delta = GridDelta::AddBomb(state_bomb);
                         grid.apply_delta(delta.clone());
+                        drop(grid);
+                        
+                        self.replay_recorder.record(delta.clone());
+                        let _ = self.delta_tx.send(delta.clone());
+                        self.events.broadcast(Event::Grid(delta));
+                        
+                        // Also broadcast bomb placement event for the bomb system to handle
+                        self.events.broadcast(Event::bomb(events::events::BombEvent::Placed {
+                            agent_id: bot_id,
+                            position,
+                        }));
                     }
-                    self.replay_recorder.record(delta.clone());
-                    let _ = self.delta_tx.send(delta.clone());
-                    self.events.broadcast(Event::Grid(delta));
                     Ok(())
                 }
             },
             BotEvent::Error { .. } => Ok(()),
+            BotEvent::Status { bot_id, status } => {
+                self.bot_status.insert(bot_id, status);
+                Ok(())
+            }
         }
     }
 
@@ -183,15 +270,35 @@ impl Engine {
             .spawn_bot(config, Arc::clone(&self.events))?;
         let id = handle.id;
         self.bots.push(handle);
-        // Add agent to the game grid
-        let agent_state = state::components::AgentState::new(id, (0, 0)); // Default position for now
-        let delta = GridDelta::AddAgent(agent_state);
-        {
-            let mut grid = self.grid.write().expect("grid lock poisoned");
-            grid.apply_delta(delta.clone());
-        }
-        self.replay_recorder.record(delta);
-        Ok(id)    }
+        
+        // Calculate spawn position based on bot ID to avoid overlapping
+        // Spread 8 bots across the larger map in a grid pattern
+        // Each spawn position should have a 3x3 cleared area
+        let spawn_positions = [
+            (3u16, 3u16),        // Top-left
+            ((self.config.width / 2) as u16, 3u16),  // Top-center
+            ((self.config.width - 4) as u16, 3u16),  // Top-right
+            (3u16, (self.config.height / 2) as u16), // Middle-left
+            ((self.config.width - 4) as u16, (self.config.height / 2) as u16), // Middle-right
+            (3u16, (self.config.height - 4) as u16), // Bottom-left
+            ((self.config.width / 2) as u16, (self.config.height - 4) as u16), // Bottom-center
+            ((self.config.width - 4) as u16, (self.config.height - 4) as u16), // Bottom-right
+        ];
+        let position = spawn_positions[id % spawn_positions.len()];
+        
+        // Initialize movement cooldown for this bot
+        self.movement_cooldowns.insert(id, std::time::Instant::now());
+        
+        let agent = state::components::AgentState::new(id, position);
+        let delta = GridDelta::AddAgent(agent);
+        self.grid.write().expect("grid lock poisoned").apply_delta(delta.clone());
+        self.replay_recorder.record(delta.clone());
+        let _ = self.delta_tx.send(delta.clone());
+        self.events.broadcast(Event::Grid(delta));
+        println!("🎯 Engine spawned bot {} at position {:?}", id, position);
+        
+        Ok(id)
+    }
 
     /// Remove a bot from the engine.
     pub fn remove_bot(&mut self, bot_id: BotId) -> Result<(), BotError> {
@@ -214,10 +321,43 @@ impl Engine {
         &self.config
     }
 
+    /// Snapshot of current bot statuses (e.g., active goal per bot).
+    pub fn bot_status(&self) -> std::collections::HashMap<usize, String> {
+        self.bot_status.clone()
+    }
+
     /// Start recording a replay.
     pub fn start_replay_recording(&mut self) {
         self.replay_recorder.start();
-        self.determinism_checker = DeterminismChecker::new();
+    }
+    
+    /// Check if a position is walkable (not a wall or obstacle)
+    fn is_position_walkable(&self, grid: &GameGrid, pos: (u16, u16)) -> bool {
+        use state::Tile;
+        
+        // Bounds checking
+        if pos.0 >= self.config.width as u16 || pos.1 >= self.config.height as u16 {
+            return false;
+        }
+        
+        // Check if there's another agent at this position
+        for agent in grid.agents() {
+            if agent.position == pos {
+                return false;
+            }
+        }
+        
+        // Check tile type
+        let tiles = grid.tiles();
+        let index = (pos.1 as usize) * self.config.width + (pos.0 as usize);
+        if index < tiles.len() {
+            match tiles[index] {
+                Tile::Empty | Tile::PowerUp => true,
+                Tile::Wall | Tile::SoftCrate | Tile::Explosion => false,
+            }
+        } else {
+            false
+        }
     }
 
     /// Stop recording and return the replay.
@@ -273,6 +413,36 @@ impl Engine {
             }
         });
         self.systems.push(sys);
+    }
+
+    /// Access the current statuses of all bots.
+    pub fn bot_statuses(&self) -> &std::collections::HashMap<usize, String> {
+        &self.bot_status
+    }
+    
+    /// Check if the game has ended and return the winner if applicable.
+    pub fn check_game_end(&self) -> Option<usize> {
+        let grid = self.grid.read().ok()?;
+        let agents = grid.agents();
+        
+        // Game ends when only one agent remains
+        if agents.len() == 1 {
+            Some(agents[0].id)
+        } else if agents.is_empty() {
+            // All agents eliminated (tie)
+            Some(usize::MAX) // Use MAX to indicate tie
+        } else {
+            None // Game still ongoing
+        }
+    }
+    
+    /// Get the number of remaining agents.
+    pub fn remaining_agents(&self) -> usize {
+        if let Ok(grid) = self.grid.read() {
+            grid.agents().len()
+        } else {
+            0
+        }
     }
 }
 

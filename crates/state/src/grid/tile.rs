@@ -13,6 +13,8 @@ pub enum Tile {
     SoftCrate,
     /// Tile containing a power-up
     PowerUp,
+    /// Explosion animation tile (temporary)
+    Explosion,
 }
 
 impl Tile {
@@ -23,6 +25,7 @@ impl Tile {
             Tile::Wall => 1,
             Tile::SoftCrate => 2,
             Tile::PowerUp => 3,
+            Tile::Explosion => 4,
         }
     }
 }

@@ -3,11 +3,8 @@
 
 pub mod bot;
 pub mod config;
-pub mod coord;
 pub mod display;
 pub mod engine;
-pub mod map;
-pub mod shrink;
 pub mod simulation;
 pub mod systems;
 pub mod tournament;
@@ -146,8 +143,12 @@ impl SystemInitializer {
     async fn initialize_engine(&mut self) -> Result<(), InitializationError> {
         let events = Arc::clone(self.event_bus.as_ref().ok_or(InitializationError::Engine)?);
         let grid = Arc::clone(self.game_grid.as_ref().ok_or(InitializationError::Engine)?);
-        let (engine, _rx) =
+        let (mut engine, _rx) =
             engine::Engine::with_components(self.config.engine.clone(), grid, events);
+        
+        // Add the bomb system for bomb explosions
+        engine.add_system(Box::new(systems::BombSystem::new()));
+        
         self.engine = Some(engine);
         Ok(())
     }
@@ -160,11 +161,13 @@ impl SystemInitializer {
     async fn initialize_bots(&mut self) -> Result<(), InitializationError> {
         use ::bot::AiType;
         let engine = self.engine.as_mut().ok_or(InitializationError::Engine)?;
+        println!("🤖 Spawning {} bots...", self.config.bots.len());
         for cfg in &self.config.bots {
             let mut bot_cfg = ::bot::BotConfig::new(
                 &cfg.name,
-                match cfg.ai_type.as_str() {
-                    "Reactive" => AiType::Reactive,
+                match cfg.ai_type.to_lowercase().as_str() {
+                    "reactive" => AiType::Reactive,
+                    "planning" => AiType::Planning,
                     _ => AiType::Heuristic,
                 },
             );
@@ -172,10 +175,12 @@ impl SystemInitializer {
             bot_cfg.rl_model_path = cfg.rl_model_path.clone();
             bot_cfg.decision_timeout = std::time::Duration::from_millis(cfg.decision_timeout_ms);
             if let Err(e) = engine.spawn_bot(bot_cfg) {
+                println!("❌ Failed to spawn bot {}: {}", cfg.name, e);
                 return Err(InitializationError::Bot(e.to_string()));
             }
             self.bot_count += 1;
         }
+        println!("✅ Successfully spawned {} bots", self.bot_count);
         Ok(())
     }
 }

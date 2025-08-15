@@ -24,7 +24,7 @@ pub struct Bot {
     #[allow(dead_code)]
     goal_manager: Arc<GoalManager>,
     #[allow(dead_code)]
-    pathfinder: Arc<Pathfinder>,
+    pathfinder: Arc<std::sync::Mutex<Pathfinder>>,
     #[allow(dead_code)]
     influence_map: Arc<Mutex<InfluenceMap>>,
 }
@@ -48,7 +48,7 @@ impl Bot {
     /// Create a new [`Bot`] referencing the shared [`EventBus`].
     pub fn new(config: BotConfig, events: Arc<EventBus>) -> Self {
         let goal_manager = Arc::new(GoalManager::new());
-        let pathfinder = Arc::new(Pathfinder::new());
+        let pathfinder = Arc::new(std::sync::Mutex::new(Pathfinder::new()));
         let influence_map = Arc::new(Mutex::new(InfluenceMap::new(1, 1)));
 
         let ai: Box<dyn DecisionMaker<GridDelta, BotDecision>> = Box::new(AIDecisionPipeline::new(
@@ -91,6 +91,13 @@ impl Bot {
                     if duration > self.config.decision_timeout {
                         // In future, log or handle long decision times.
                     }
+                    // Emit status if available
+                    if let Some(status) = self.ai.status() {
+                        self.events.emit(
+                            Event::Bot(BotEvent::Status { bot_id: self.config.id, status }),
+                            EventPriority::Low,
+                        );
+                    }
                     self.events.emit(
                         Event::Bot(BotEvent::Decision {
                             bot_id: self.config.id,
@@ -99,8 +106,12 @@ impl Bot {
                         EventPriority::Normal,
                     );
                 }
-                Event::System(SystemEvent::EngineStopped) => break,
-                _ => {}
+                Event::System(SystemEvent::EngineStopped) => {
+                    break;
+                }
+                _ => {
+                    // Ignore unexpected events
+                }
             }
         }
         self.state
@@ -113,7 +124,7 @@ impl Bot {
 mod tests {
     use super::*;
     use events::events::Event;
-    use tempfile::tempdir;
+
 
     #[test]
     fn bot_emits_decision_on_grid_event() {

@@ -166,11 +166,29 @@ fn region_from_source(x: u16, y: u16, range: u16, width: u16, height: u16) -> Di
     let start_y = y.saturating_sub(range);
     let end_x = (u32::from(x) + u32::from(range)).min(u32::from(width - 1));
     let end_y = (u32::from(y) + u32::from(range)).min(u32::from(height - 1));
+    
+    // Ensure we don't have overflow by checking bounds
+    let actual_start_x = u32::from(start_x);
+    let actual_start_y = u32::from(start_y);
+    
+    // Calculate width and height safely, ensuring they don't overflow
+    let region_width = if end_x >= actual_start_x {
+        (end_x - actual_start_x + 1) as u16
+    } else {
+        1 // Minimum width if calculation would overflow
+    };
+    
+    let region_height = if end_y >= actual_start_y {
+        (end_y - actual_start_y + 1) as u16
+    } else {
+        1 // Minimum height if calculation would overflow
+    };
+    
     DirtyRegion {
         x: start_x,
         y: start_y,
-        width: (end_x - u32::from(start_x) + 1) as u16,
-        height: (end_y - u32::from(start_y) + 1) as u16,
+        width: region_width,
+        height: region_height,
     }
 }
 

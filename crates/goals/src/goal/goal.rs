@@ -4,11 +4,24 @@ use thiserror::Error;
 /// Identifier for a bot instance.
 pub type BotId = events::events::bot_events::BotId;
 
-/// Simplified action placeholder used by goals.
+/// Actions that goals can plan and execute.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     /// Do nothing this tick.
     Wait,
+    /// Move in a specific direction.
+    Move(common::Direction),
+    /// Place a bomb at current position.
+    PlaceBomb,
+    /// Move towards a specific position.
+    MoveTowards { 
+        /// Target x coordinate.
+        x: u16, 
+        /// Target y coordinate.
+        y: u16 
+    },
+    /// Escape from danger area.
+    EscapeDanger,
 }
 
 /// High-level goal categories.
@@ -18,6 +31,10 @@ pub enum GoalType {
     CollectPowerUp,
     /// Move to avoid danger such as explosions.
     AvoidDanger,
+    /// Attack nearby enemies.
+    AttackEnemy,
+    /// Destroy soft blocks to clear paths or find power-ups.
+    DestroyBlocks,
 }
 
 /// Errors that can occur during goal planning.

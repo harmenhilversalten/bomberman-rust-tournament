@@ -1,8 +1,5 @@
-use std::fs::File;
-use std::io::Write;
 use engine::{SystemInitializer, TournamentManager, UnifiedConfig, display::GameDisplay};
 use log::info;
-use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use crossterm::event::{self, Event, KeyCode};
 
@@ -19,6 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = UnifiedConfig::from_file(&config_path)?;
     config = config.with_env_overrides()?;
     println!("✅ Configuration loaded successfully");
+    println!("🔧 Engine config: {}x{} grid, {} bots", config.engine.width, config.engine.height, config.bots.len());
     info!("Loaded configuration from {}", config_path);
     
     println!("🔧 Initializing system...");
@@ -92,13 +90,23 @@ async fn run_interactive_game(
             engine.tick().await?;
             tick_count += 1;
             
-            // Update display with the actual game grid
+            // Display game info
             display.render(&grid)?;
             
             // Add delay for visibility
             tokio::time::sleep(Duration::from_millis(200)).await;
             
-            // Stop after reasonable number of ticks for demo
+            // Check for game end conditions
+            if let Some(winner) = engine.check_game_end() {
+                if winner == usize::MAX {
+                    println!("\n🏁 GAME ENDED - It's a tie! All players eliminated.");
+                } else {
+                    println!("\n🏆 GAME ENDED - Bot {} wins!", winner);
+                }
+                break;
+            }
+            
+            // Stop after reasonable number of ticks for demo (if no winner)
             if tick_count >= 100 {
                 info!("Demo completed after {} ticks", tick_count);
                 break;

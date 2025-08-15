@@ -118,8 +118,8 @@ mod tests {
     use std::sync::Mutex;
     use std::time::{Duration, Instant};
 
-    #[test]
-    fn tasks_follow_dependency_order() {
+    #[tokio::test]
+    async fn tasks_follow_dependency_order() {
         let mut scheduler = TaskScheduler::new();
         let order = Arc::new(Mutex::new(Vec::new()));
 
@@ -138,13 +138,13 @@ mod tests {
             order_c.lock().unwrap().push("C");
         });
 
-        scheduler.run();
+        scheduler.run().await;
 
         assert_eq!(order.lock().unwrap().as_slice(), &["A", "B", "C"]);
     }
 
-    #[test]
-    fn runs_independent_tasks_in_parallel() {
+    #[tokio::test]
+    async fn runs_independent_tasks_in_parallel() {
         let mut scheduler = TaskScheduler::new();
         scheduler.add_task("A", vec![], true, || {
             std::thread::sleep(Duration::from_millis(200));
@@ -154,7 +154,7 @@ mod tests {
         });
 
         let start = Instant::now();
-        scheduler.run();
+        scheduler.run().await;
         assert!(start.elapsed() < Duration::from_millis(350));
     }
 }

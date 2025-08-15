@@ -1,10 +1,10 @@
 [engine]
-width = 13
-height = 11
-tick_rate = 60
+width = 41
+height = 37
+tick_rate = 30
 
 [engine.rules]
-max_players = 4
+max_players = 8
 bomb_timer = 3
 starting_lives = 3
 
@@ -20,6 +20,42 @@ decision_timeout_ms = 1000
 
 [[bots]]
 name = "TestBot2"
+ai_type = "heuristic"
+rl_mode = false
+decision_timeout_ms = 1000
+
+[[bots]]
+name = "TestBot3"
+ai_type = "heuristic"
+rl_mode = false
+decision_timeout_ms = 1000
+
+[[bots]]
+name = "TestBot4"
+ai_type = "heuristic"
+rl_mode = false
+decision_timeout_ms = 1000
+
+[[bots]]
+name = "TestBot5"
+ai_type = "heuristic"
+rl_mode = false
+decision_timeout_ms = 1000
+
+[[bots]]
+name = "TestBot6"
+ai_type = "heuristic"
+rl_mode = false
+decision_timeout_ms = 1000
+
+[[bots]]
+name = "TestBot7"
+ai_type = "heuristic"
+rl_mode = false
+decision_timeout_ms = 1000
+
+[[bots]]
+name = "TestBot8"
 ai_type = "heuristic"
 rl_mode = false
 decision_timeout_ms = 1000

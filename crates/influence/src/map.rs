@@ -32,6 +32,16 @@ impl InfluenceMap {
 }
 
 impl<'a> InfluenceData<'a> {
+    /// Width of the influence map.
+    pub fn width(&self) -> u16 {
+        self.map.width()
+    }
+
+    /// Height of the influence map.
+    pub fn height(&self) -> u16 {
+        self.map.height()
+    }
+
     /// Danger score at the given position.
     pub fn get_danger_at(&self, position: Position) -> f32 {
         self.map

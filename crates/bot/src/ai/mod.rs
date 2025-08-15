@@ -34,7 +34,7 @@ impl SwitchingAI {
     pub fn new(
         initial: AiType,
         goal_manager: std::sync::Arc<goals::GoalManager>,
-        pathfinder: std::sync::Arc<path::Pathfinder>,
+        pathfinder: std::sync::Arc<std::sync::Mutex<path::Pathfinder>>,
         influence_map: std::sync::Arc<std::sync::Mutex<influence::map::InfluenceMap>>,
     ) -> Self {
         Self {

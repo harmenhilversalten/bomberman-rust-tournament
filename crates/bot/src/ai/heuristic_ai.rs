@@ -18,7 +18,7 @@ impl HeuristicAI {
     /// Construct a new [`HeuristicAI`].
     pub fn new(
         goal_manager: Arc<GoalManager>,
-        pathfinder: Arc<Pathfinder>,
+        pathfinder: Arc<std::sync::Mutex<Pathfinder>>,
         influence_map: Arc<Mutex<InfluenceMap>>,
     ) -> Self {
         Self {

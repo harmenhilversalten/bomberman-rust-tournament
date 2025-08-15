@@ -10,3 +10,4 @@ thiserror = { workspace = true }
 influence = { path = "../influence" }
 serde = { workspace = true, features = ["derive"] }
 log = { workspace = true }
+common = { path = "../common" }

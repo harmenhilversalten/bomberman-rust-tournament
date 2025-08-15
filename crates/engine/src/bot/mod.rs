@@ -75,8 +75,8 @@ mod tests {
     use super::*;
     use bot::AiType;
 
-    #[test]
-    fn spawns_bot_and_returns_handle() {
+    #[tokio::test]
+    async fn spawns_bot_and_returns_handle() {
         let manager = BotManager::new();
         let bus = Arc::new(EventBus::new());
         let cfg = BotConfig::new("b", AiType::Heuristic);

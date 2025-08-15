@@ -30,29 +30,120 @@ pub struct ObservationDelta {
 }
 
 impl GameGrid {
-    /// Creates a new grid filled with `Tile::Empty` tiles.
+    /// Creates a new grid following the classic Bomberman pattern:
+    /// - Solid grey walls in a checkerboard pattern
+    /// - Brown breakable blocks filling remaining spaces
+    /// - Clear spawn zones for botssdd
     pub fn new(width: usize, height: usize) -> Self {
-        let tiles = vec![Tile::Empty; width * height];
+        let mut tiles = vec![Tile::Empty; width * height];
+        
+        // Add solid walls around the border
+        for x in 0..width {
+            tiles[x] = Tile::Wall; // Top edge
+            tiles[(height - 1) * width + x] = Tile::Wall; // Bottom edge
+        }
+        for y in 0..height {
+            tiles[y * width] = Tile::Wall; // Left edge
+            tiles[y * width + (width - 1)] = Tile::Wall; // Right edge
+        }
+        
+        // Create the classic Bomberman checkerboard wall pattern
+        // Every even row and even column (from inside border) gets a wall
+        for y in 1..height-1 {
+            for x in 1..width-1 {
+                // Check if this position should have a wall (checkerboard pattern)
+                let should_have_wall = (x % 2 == 0) && (y % 2 == 0);
+                
+                if should_have_wall {
+                    tiles[y * width + x] = Tile::Wall;
+                }
+            }
+        }
+        
+        // Fill remaining spaces with breakable blocks (SoftCrate)
+        for y in 1..height-1 {
+            for x in 1..width-1 {
+                let index = y * width + x;
+                
+                // Skip if this is already a wall
+                if tiles[index] == Tile::Wall {
+                    continue;
+                }
+                
+                // Fill with breakable blocks
+                tiles[index] = Tile::SoftCrate;
+            }
+        }
+        
+        // Clear spawn zones (3x3 areas) for bots
+        // These positions should be clear of both walls and breakable blocks
+        let spawn_positions = [
+            (3, 3),                    // Top-left
+            (width / 2, 3),            // Top-center
+            (width - 4, 3),            // Top-right
+            (3, height / 2),           // Middle-left
+            (width - 4, height / 2),   // Middle-right
+            (3, height - 4),           // Bottom-left
+            (width / 2, height - 4),   // Bottom-center
+            (width - 4, height - 4),   // Bottom-right
+        ];
+        
+        for &(spawn_x, spawn_y) in &spawn_positions {
+            // Clear 3x3 area around spawn position
+            for dy in -1..=1 {
+                for dx in -1..=1 {
+                    let clear_x = spawn_x as i32 + dx;
+                    let clear_y = spawn_y as i32 + dy;
+                    
+                    if clear_x >= 0 && clear_x < width as i32 && 
+                       clear_y >= 0 && clear_y < height as i32 {
+                        let index = clear_y as usize * width + clear_x as usize;
+                        tiles[index] = Tile::Empty;
+                    }
+                }
+            }
+        }
+        
+        // Ensure connectivity by clearing some strategic paths
+        // Clear horizontal and vertical corridors every 4 tiles to maintain connectivity
+        for y in 1..height-1 {
+            for x in 1..width-1 {
+                let index = y * width + x;
+                
+                // Skip if this is already empty or a wall
+                if tiles[index] == Tile::Empty || tiles[index] == Tile::Wall {
+                    continue;
+                }
+                
+                // Create horizontal corridors every 4 tiles
+                if x % 4 == 0 {
+                    tiles[index] = Tile::Empty;
+                }
+                // Create vertical corridors every 4 tiles
+                else if y % 4 == 0 {
+                    tiles[index] = Tile::Empty;
+                }
+            }
+        }
+        
         let bombs = Vec::new();
         let agents = Vec::new();
+        let version = AtomicU64::new(0);
         let (tx, _rx) = watch::channel(GridDelta::None);
-
-        let inner = SnapshotInner::new(
+        let snapshot = Atomic::new(SnapshotInner::new(
             Arc::<[Tile]>::from(tiles.clone()),
             Arc::<[Bomb]>::from(bombs.clone()),
             Arc::<[AgentState]>::from(agents.clone()),
-            0,
-        );
-
-        let snapshot = Atomic::new(inner);
-
+            version.load(Ordering::Relaxed),
+        ));
+        
         Self {
             width,
             height,
             tiles,
             bombs,
             agents,
-            version: AtomicU64::new(0),
+            version,
             snapshot,
             delta_tx: tx,
         }
@@ -87,23 +178,28 @@ impl GameGrid {
     }
 
     /// Width of the grid.
-    pub(crate) fn width(&self) -> usize {
+    pub fn width(&self) -> usize {
         self.width
     }
 
     /// Height of the grid.
-    pub(crate) fn height(&self) -> usize {
+    pub fn height(&self) -> usize {
         self.height
     }
 
     /// All tiles in the grid.
-    pub(crate) fn tiles(&self) -> &[Tile] {
+    pub fn tiles(&self) -> &[Tile] {
         &self.tiles
     }
 
     /// All bombs currently in the grid.
     pub fn bombs(&self) -> &[Bomb] {
         &self.bombs
+    }
+
+    /// All bombs currently in the grid (mutable).
+    pub fn bombs_mut(&mut self) -> &mut Vec<Bomb> {
+        &mut self.bombs
     }
 
     /// All agents currently in the grid (mutable).
@@ -184,6 +280,10 @@ impl GameGrid {
                     self.version.fetch_add(1, Ordering::Relaxed);
                 }
             }
+            GridDelta::RemoveAgent(agent_id) => {
+                self.agents.retain(|a| a.id != *agent_id);
+                self.version.fetch_add(1, Ordering::Relaxed);
+            }
         }
         self.update_snapshot();
         let _ = self.delta_tx.send(delta);
@@ -243,13 +343,15 @@ impl GameGrid {
         ObservationDelta { tiles }
     }
 
+    /// Update the snapshot with current state.
     fn update_snapshot(&mut self) {
         let new_inner = SnapshotInner::new(
             Arc::<[Tile]>::from(self.tiles.clone()),
             Arc::<[Bomb]>::from(self.bombs.clone()),
             Arc::<[AgentState]>::from(self.agents.clone()),
-            self.version(),
+            self.version.load(Ordering::Relaxed),
         );
+
         let guard = epoch::pin();
         let old = self
             .snapshot
