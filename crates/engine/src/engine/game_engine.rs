@@ -310,6 +310,7 @@ impl Engine {
                         }
                         Ok(())
                     }
+                    }
                 }
             },
             BotEvent::Error { .. } => Ok(()),
